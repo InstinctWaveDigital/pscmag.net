@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import { SITE } from "@/lib/data";
 
-export const unstable_instant = false;
+
 
 const sourceSerif = Source_Serif_4({
   subsets: ["latin"],

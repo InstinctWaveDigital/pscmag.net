@@ -3,19 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import ArticleCard from "@/components/ArticleCard";
-import { CATEGORIES, ARTICLES, getCategoryBySlug } from "@/lib/data";
+import { CATEGORIES, getCategoryBySlug } from "@/lib/data";
+import { getArticlesByCategory } from "@/lib/db-queries";
 
 const PAGE_SIZE = 6;
 
-export const unstable_instant = {
-  prefetch: "runtime",
-  samples: [
-    {
-      params: { slug: "procurement" },
-      searchParams: { page: "1" },
-    },
-  ],
-};
 
 export function generateStaticParams() {
   return CATEGORIES.map((c) => ({ slug: c.slug }));
@@ -66,7 +58,7 @@ async function CategoryContent({
   const category = getCategoryBySlug(slug);
   if (!category) notFound();
 
-  const items = ARTICLES.filter((a) => a.category === category.name);
+  const items = await getArticlesByCategory(category.name);
   const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
   let page = parseInt(resolvedSearchParams.page || "1", 10);
   if (isNaN(page) || page < 1) page = 1;

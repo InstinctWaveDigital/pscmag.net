@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ARTICLES } from "@/lib/data";
 
 export default function SearchOverlay({
   open,
@@ -13,6 +12,7 @@ export default function SearchOverlay({
 }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const [matches, setMatches] = useState<any[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -24,6 +24,7 @@ export default function SearchOverlay({
     } else {
       document.body.style.overflow = "";
       setQuery("");
+      setMatches([]);
     }
   }, [open]);
 
@@ -35,20 +36,32 @@ export default function SearchOverlay({
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  if (!open) return null;
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setMatches([]);
+      return;
+    }
 
-  const q = query.trim().toLowerCase();
-  const matches =
-    q.length >= 2
-      ? ARTICLES.filter(
-          (a) =>
-            a.title.toLowerCase().includes(q) ||
-            a.excerpt.toLowerCase().includes(q) ||
-            a.category.toLowerCase().includes(q) ||
-            a.author.toLowerCase().includes(q) ||
-            a.tags.some((t) => t.toLowerCase().includes(q))
-        ).slice(0, 8)
-      : [];
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: controller.signal })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.matches) {
+            setMatches(data.matches);
+          }
+        })
+        .catch(() => {});
+    }, 200);
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [query]);
+
+  if (!open) return null;
 
   return (
     <div

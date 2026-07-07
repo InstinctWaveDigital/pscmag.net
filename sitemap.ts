@@ -1,7 +1,8 @@
 import { MetadataRoute } from "next";
-import { ARTICLES, CATEGORIES, SITE } from "@/lib/data";
+import { CATEGORIES, SITE } from "@/lib/data";
+import { getAllArticles } from "@/lib/db-queries";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${SITE.url}/`, changeFrequency: "daily", priority: 1 },
     { url: `${SITE.url}/about`, changeFrequency: "monthly", priority: 0.6 },
@@ -15,7 +16,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  const articleRoutes: MetadataRoute.Sitemap = ARTICLES.map((a) => ({
+  const articles = await getAllArticles();
+  const articleRoutes: MetadataRoute.Sitemap = articles.map((a) => ({
     url: `${SITE.url}/article/${a.id}`,
     lastModified: a.date,
     changeFrequency: "weekly",

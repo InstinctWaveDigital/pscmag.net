@@ -1,12 +1,46 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
+import { query } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { CATEGORIES } from "@/lib/data";
-import { useCMS } from "@/lib/cms-store";
 
-export default function CategoriesPage() {
-  const { articles } = useCMS();
+export const dynamic = "force-dynamic";
+
+export default async function CategoriesPage() {
+  const session = await getSession();
+  
+  if (!session) {
+    redirect("/admin/login");
+  }
+
+  // Fetch count stats per category
+  const res = await query(
+    "SELECT category, status, COUNT(*) as count FROM articles GROUP BY category, status"
+  );
+  
+  // Aggregate stats
+  const categoryCounts: Record<string, { total: number; published: number }> = {};
+  
+  // Initialize with 0 for all existing categories
+  CATEGORIES.forEach((c) => {
+    categoryCounts[c.name] = { total: 0, published: 0 };
+  });
+
+  res.rows.forEach((row) => {
+    const cat = row.category;
+    const status = row.status;
+    const count = parseInt(row.count, 10);
+    
+    if (!categoryCounts[cat]) {
+      categoryCounts[cat] = { total: 0, published: 0 };
+    }
+    
+    categoryCounts[cat].total += count;
+    if (status === "published") {
+      categoryCounts[cat].published += count;
+    }
+  });
 
   return (
     <div className="p-6 xl:p-8">
@@ -20,8 +54,7 @@ export default function CategoriesPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {CATEGORIES.map((c) => {
-          const count = articles.filter((a) => a.category === c.name).length;
-          const published = articles.filter((a) => a.category === c.name && a.status === "published").length;
+          const stats = categoryCounts[c.name] || { total: 0, published: 0 };
           return (
             <div
               key={c.slug}
@@ -41,8 +74,8 @@ export default function CategoriesPage() {
                 <p className="text-xs text-[#6B7280]">{c.desc}</p>
                 <div className="mt-2 flex items-center justify-between">
                   <div className="flex items-center gap-3 font-mono text-[0.65rem] text-[#4B5563]">
-                    <span>{count} total</span>
-                    <span className="text-green-400">{published} live</span>
+                    <span>{stats.total} total</span>
+                    <span className="text-green-400">{stats.published} live</span>
                   </div>
                   <Link
                     href={`/admin/articles?category=${encodeURIComponent(c.name)}`}

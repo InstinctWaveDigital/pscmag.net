@@ -432,6 +432,14 @@ export function initials(name: string): string {
         .toUpperCase();
 }
 
+export function getArtUrl(art: string): string {
+  if (!art) return "/images/procurement.svg";
+  if (art.startsWith("/") || art.startsWith("http://") || art.startsWith("https://")) {
+    return art;
+  }
+  return `/images/${art}.svg`;
+}
+
 export function slugifyCategory(name: string): string {
     return name
         .toLowerCase()

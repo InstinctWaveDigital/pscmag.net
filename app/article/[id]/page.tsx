@@ -5,26 +5,13 @@ import type { Metadata } from "next";
 import ShareRow from "@/components/ShareRow";
 import ArticleCard from "@/components/ArticleCard";
 import NewsletterSection from "@/components/NewsletterSection";
-import {
-  ARTICLES,
-  getArticleById,
-  getRelated,
-  formatDate,
-  initials,
-  slugifyCategory,
-} from "@/lib/data";
+import { getArticleById, getRelated, getAllArticles } from "@/lib/db-queries";
+import { formatDate, initials, slugifyCategory, getArtUrl } from "@/lib/data";
 
-export const unstable_instant = {
-  prefetch: "runtime",
-  samples: [
-    {
-      params: { id: "customs-single-window-2026" },
-    },
-  ],
-};
 
-export function generateStaticParams() {
-  return ARTICLES.map((a) => ({ id: a.id }));
+export async function generateStaticParams() {
+  const articles = await getAllArticles();
+  return articles.map((a) => ({ id: a.id }));
 }
 
 export async function generateMetadata({
@@ -33,7 +20,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const article = getArticleById(id);
+  const article = await getArticleById(id);
   if (!article) return {};
   return {
     title: article.title,
@@ -57,10 +44,10 @@ export default async function ArticlePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const article = getArticleById(id);
+  const article = await getArticleById(id);
   if (!article) notFound();
 
-  const related = getRelated(article, 3);
+  const related = await getRelated(article, 3);
   const categorySlug = slugifyCategory(article.category);
 
   return (
@@ -117,7 +104,7 @@ export default async function ArticlePage({
         <div className="container-x max-w-[1024px] mt-8">
           <div className="relative aspect-[21/9] w-full overflow-hidden rounded-xl bg-blue-50 border border-line-200">
             <Image
-              src={`/images/${article.art}.svg`}
+              src={getArtUrl(article.art)}
               alt=""
               fill
               priority

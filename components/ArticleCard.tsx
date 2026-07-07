@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Article, formatDate } from "@/lib/data";
+import { Article, formatDate, getArtUrl } from "@/lib/data";
 
 export default function ArticleCard({
   article,
@@ -23,7 +23,7 @@ export default function ArticleCard({
         aria-hidden="true"
       >
         <Image
-          src={`/images/${article.art}.svg`}
+          src={getArtUrl(article.art)}
           alt=""
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"

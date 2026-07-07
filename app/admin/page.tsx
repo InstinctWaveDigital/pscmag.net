@@ -1,9 +1,10 @@
-"use client";
-
-import { useMemo } from "react";
+import { query } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { useCMS } from "@/lib/cms-store";
 import { formatDate } from "@/lib/data";
+
+export const dynamic = "force-dynamic";
 
 const STATUS_STYLE: Record<string, string> = {
   published: "bg-green-500/10 text-green-400 border-green-500/20",
@@ -39,47 +40,42 @@ function StatCard({
   );
 }
 
-function SparkBar({ values }: { values: number[] }) {
-  const max = Math.max(...values);
-  return (
-    <div className="flex h-16 items-end gap-1">
-      {values.map((v, i) => (
-        <div
-          key={i}
-          style={{ height: `${Math.round((v / max) * 100)}%`, opacity: 0.5 + (i / values.length) * 0.5 }}
-          className="flex-1 rounded-sm bg-[#E2231A] transition-all"
-        />
-      ))}
-    </div>
-  );
-}
-
 const WEEKLY_VIEWS = [38, 52, 47, 61, 55, 79, 84, 72, 91, 88, 105, 120];
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const WEEK_VALS = [4800, 6200, 5100, 7400, 8800, 3200, 2100];
 
-export default function AdminDashboard() {
-  const { articles, hydrated } = useCMS();
+export default async function AdminDashboard() {
+  const session = await getSession();
+  if (!session) {
+    redirect("/admin/login");
+  }
 
-  const stats = useMemo(() => {
-    const published = articles.filter((a) => a.status === "published").length;
-    const draft = articles.filter((a) => a.status === "draft").length;
-    const archived = articles.filter((a) => a.status === "archived").length;
-    return { published, draft, archived, total: articles.length };
-  }, [articles]);
+  // Fetch count stats from PostgreSQL
+  const pubRes = await query("SELECT COUNT(*) FROM articles WHERE status = 'published'");
+  const draftRes = await query("SELECT COUNT(*) FROM articles WHERE status = 'draft'");
+  const archRes = await query("SELECT COUNT(*) FROM articles WHERE status = 'archived'");
+  const totalRes = await query("SELECT COUNT(*) FROM articles");
 
-  const recent = useMemo(
-    () => [...articles].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 6),
-    [articles]
-  );
+  const stats = {
+    published: parseInt(pubRes.rows[0].count, 10),
+    draft: parseInt(draftRes.rows[0].count, 10),
+    archived: parseInt(archRes.rows[0].count, 10),
+    total: parseInt(totalRes.rows[0].count, 10),
+  };
 
-  if (!hydrated) {
-    return (
-      <div className="flex h-full items-center justify-center text-[#4B5563] font-mono text-sm">
-        Loading workspace…
-      </div>
+  // Fetch recent articles (optionally filter by author for Writers)
+  let recentRes;
+  if (session.role === "writer") {
+    recentRes = await query(
+      "SELECT id, title, author, category, status, updated_at FROM articles WHERE author = $1 ORDER BY updated_at DESC LIMIT 6",
+      [session.name]
+    );
+  } else {
+    recentRes = await query(
+      "SELECT id, title, author, category, status, updated_at FROM articles ORDER BY updated_at DESC LIMIT 6"
     );
   }
+  const recent = recentRes.rows;
 
   return (
     <div className="p-6 xl:p-8">
@@ -87,7 +83,7 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <h1 className="font-display text-2xl font-bold text-white">Dashboard</h1>
         <p className="mt-1 text-sm text-[#6B7280]">
-          Editorial workspace for Africa Procurement and Supply Chain Mag.
+          Editorial workspace for Africa Procurement and Supply Chain Mag &middot; Welcome back, {session.name} ({session.role}).
         </p>
       </div>
 
@@ -172,7 +168,9 @@ export default function AdminDashboard() {
       {/* Recent articles */}
       <div className="rounded-xl border border-white/8 bg-[#111827]">
         <div className="flex items-center justify-between border-b border-white/8 px-5 py-4">
-          <h2 className="text-sm font-semibold text-white">Recent Stories</h2>
+          <h2 className="text-sm font-semibold text-white">
+            {session.role === "writer" ? "My Recent Stories" : "Recent Stories"}
+          </h2>
           <Link
             href="/admin/articles"
             className="font-mono text-[0.7rem] text-[#E2231A] hover:underline"
@@ -193,11 +191,13 @@ export default function AdminDashboard() {
                   <span>·</span>
                   <span>{a.category}</span>
                   <span>·</span>
-                  <span>{formatDate(a.updatedAt)}</span>
+                  <span>{formatDate(a.updated_at)}</span>
                 </div>
               </div>
               <span
-                className={`hidden flex-none rounded-full border px-2.5 py-0.5 font-mono text-[0.62rem] font-semibold uppercase tracking-wider sm:inline-flex ${STATUS_STYLE[a.status]}`}
+                className={`hidden flex-none rounded-full border px-2.5 py-0.5 font-mono text-[0.62rem] font-semibold uppercase tracking-wider sm:inline-flex ${
+                  STATUS_STYLE[a.status] || "bg-[#374151] text-[#6B7280]"
+                }`}
               >
                 {a.status}
               </span>

@@ -2,11 +2,12 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import ArticleCard from "@/components/ArticleCard";
-import Ticker from "@/components/Ticker";
 import NewsletterSection from "@/components/NewsletterSection";
-import { ARTICLES, CATEGORIES, formatDate, getFeatured, SITE } from "@/lib/data";
+import { CATEGORIES, formatDate, SITE } from "@/lib/data";
+import { getFeatured, getAllArticles } from "@/lib/db-queries";
+import Ticker from "@/components/Ticker";
 
-export const unstable_instant = false;
+
 
 export const metadata: Metadata = {
   title: "Trade Press for Procurement & Supply Chain Leaders",
@@ -14,19 +15,30 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-export default function HomePage() {
-  const feats = getFeatured();
-  const heroMain = feats[0];
-  const heroSide = [...feats.slice(1), ...ARTICLES.filter((a) => !feats.includes(a))].slice(0, 3);
+export default async function HomePage() {
+  const feats = await getFeatured();
+  const articles = await getAllArticles();
+  const heroMain = feats[0] || articles[0];
+  
+  if (!heroMain) {
+    return (
+      <div className="container-x py-24 text-center font-mono text-ink-300">
+        No articles found in database.
+      </div>
+    );
+  }
+
+  const otherFeats = feats.slice(1);
+  const heroSide = [...otherFeats, ...articles.filter((a) => a.id !== heroMain.id && !otherFeats.some((f) => f.id === a.id))].slice(0, 3);
 
   const excludeIds = new Set([heroMain.id, ...heroSide.map((a) => a.id)]);
-  const latestGrid = ARTICLES.filter((a) => !excludeIds.has(a.id)).slice(0, 4);
+  const latestGrid = articles.filter((a) => !excludeIds.has(a.id)).slice(0, 4);
   latestGrid.forEach((a) => excludeIds.add(a.id));
 
-  const awardsArticles = ARTICLES.filter((a) => a.category === "Awards & Events").slice(0, 3);
+  const awardsArticles = articles.filter((a) => a.category === "Awards & Events" && !excludeIds.has(a.id)).slice(0, 3);
   awardsArticles.forEach((a) => excludeIds.add(a.id));
 
-  const editorsPicks = ARTICLES.filter((a) => !excludeIds.has(a.id)).slice(0, 4);
+  const editorsPicks = articles.filter((a) => !excludeIds.has(a.id)).slice(0, 4);
 
   return (
     <>
@@ -74,7 +86,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <Ticker items={ARTICLES.slice(0, 8)} />
+      <Ticker items={articles.slice(0, 8)} />
 
       {/* Categories */}
       <section className="bg-paper-100 py-14">
