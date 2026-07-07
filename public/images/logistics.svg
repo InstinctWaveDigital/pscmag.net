@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" preserveAspectRatio="xMidYMid slice">
+<defs>
+<linearGradient id="gradLog" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#E2231A"/>
+<stop offset="1" stop-color="#7a0f09"/>
+</linearGradient>
+<pattern id="grid-gradLog" width="28" height="28" patternUnits="userSpaceOnUse">
+<path d="M28 0H0V28" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
+</pattern>
+</defs>
+<rect width="640" height="400" fill="url(#gradLog)"/>
+<rect width="640" height="400" fill="url(#grid-gradLog)"/>
+
+<g transform="translate(320,210)" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.95">
+  <line x1="-220" y1="-140" x2="-220" y2="60"/>
+  <line x1="-220" y1="-140" x2="120" y2="-140"/>
+  <line x1="60" y1="-140" x2="60" y2="-90"/>
+  <line x1="10" y1="-90" x2="110" y2="-90"/>
+  <rect x="-170" y="10" width="90" height="60" rx="4" fill="rgba(255,255,255,0.12)"/>
+  <rect x="-70" y="10" width="90" height="60" rx="4" fill="rgba(255,255,255,0.2)"/>
+  <rect x="30" y="10" width="90" height="60" rx="4" fill="rgba(255,255,255,0.12)"/>
+  <line x1="-170" y1="30" x2="-80" y2="30"/>
+  <line x1="-70" y1="30" x2="20" y2="30"/>
+  <line x1="30" y1="30" x2="120" y2="30"/>
+</g>
+</svg>
