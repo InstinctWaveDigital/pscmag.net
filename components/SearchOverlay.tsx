@@ -122,14 +122,14 @@ export default function SearchOverlay({
           </button>
         </form>
 
-        {q.length < 2 && (
+        {query.length < 2 && (
           <p className="mt-4 text-sm text-ink-500">
             Try &ldquo;AfCFTA&rdquo;, &ldquo;ports&rdquo;, or &ldquo;APSCA
             2026&rdquo;.
           </p>
         )}
 
-        {q.length >= 2 && matches.length === 0 && (
+        {query.length >= 2 && matches.length === 0 && (
           <div className="mt-4 p-4 text-center text-ink-500">
             <h3 className="mb-1 font-display text-base font-bold text-ink-900">
               No results for &ldquo;{query}&rdquo;
