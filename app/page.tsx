@@ -7,7 +7,8 @@ import { CATEGORIES, formatDate, SITE } from "@/lib/data";
 import { getFeatured, getAllArticles } from "@/lib/db-queries";
 import Ticker from "@/components/Ticker";
 
-
+// Forces the page to bypass static rendering at build time when your database is offline
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Trade Press for Procurement & Supply Chain Leaders",
@@ -16,8 +17,17 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const feats = await getFeatured();
-  const articles = await getAllArticles();
+  let feats: any[] = [];
+  let articles: any[] = [];
+
+  // Safely wrap queries to capture runtime execution contexts
+  try {
+    feats = await getFeatured();
+    articles = await getAllArticles();
+  } catch (error) {
+    console.error("⚠️ Home page database connection failed:", error);
+  }
+
   const heroMain = feats[0] || articles[0];
   
   if (!heroMain) {

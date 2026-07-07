@@ -8,10 +8,17 @@ import NewsletterSection from "@/components/NewsletterSection";
 import { getArticleById, getRelated, getAllArticles } from "@/lib/db-queries";
 import { formatDate, initials, slugifyCategory, getArtUrl } from "@/lib/data";
 
+// Fallback configuration to dynamically render missing slugs at runtime if database was offline during build
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
-  const articles = await getAllArticles();
-  return articles.map((a) => ({ id: a.id }));
+  try {
+    const articles = await getAllArticles();
+    return articles.map((a) => ({ id: a.id }));
+  } catch (error) {
+    console.warn("⚠️ Database unreachable during build stage. Skipping static parameter generation.");
+    return []; // Returns an empty list so local compilation finishes without throwing ECONNREFUSED
+  }
 }
 
 export async function generateMetadata({
@@ -20,22 +27,27 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const article = await getArticleById(id);
-  if (!article) return {};
-  return {
-    title: article.title,
-    description: article.excerpt,
-    alternates: { canonical: `/article/${article.id}` },
-    openGraph: {
-      type: "article",
+  
+  try {
+    const article = await getArticleById(id);
+    if (!article) return {};
+    return {
       title: article.title,
       description: article.excerpt,
-      url: `https://www.africaprocurementmag.com/article/${article.id}`,
-      publishedTime: article.date,
-      authors: [article.author],
-      tags: article.tags,
-    },
-  };
+      alternates: { canonical: `/article/${article.id}` },
+      openGraph: {
+        type: "article",
+        title: article.title,
+        description: article.excerpt,
+        url: `https://www.africaprocurementmag.com/article/${article.id}`,
+        publishedTime: article.date,
+        authors: [article.author],
+        tags: article.tags,
+      },
+    };
+  } catch {
+    return { title: "Article | APSC Mag" };
+  }
 }
 
 export default async function ArticlePage({
@@ -44,10 +56,25 @@ export default async function ArticlePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const article = await getArticleById(id);
+  
+  let article;
+  try {
+    article = await getArticleById(id);
+  } catch (error) {
+    console.error("Database connection failed while fetching article data:", error);
+    notFound(); // Triggers global 404 handler gracefully if database falls over
+  }
+
   if (!article) notFound();
 
-  const related = await getRelated(article, 3);
+  // Fetch contextual dependencies safely
+  let related: any[] = []; // Explicitly typed to resolve implicit type tracking error
+  try {
+    related = await getRelated(article, 3);
+  } catch (e) {
+    console.warn("Could not retrieve related stories context:", e);
+  }
+
   const categorySlug = slugifyCategory(article.category);
 
   return (
@@ -119,9 +146,8 @@ export default async function ArticlePage({
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_240px]">
             {/* Left Main column */}
             <div className="flex flex-col gap-6">
-              {article.body.map((para, idx) => {
+              {article.body.map((para: string, idx: number) => {
                 if (idx === 0) {
-                  // Style lead paragraph
                   return (
                     <p
                       key={idx}
@@ -140,7 +166,7 @@ export default async function ArticlePage({
 
               {/* Sourced tags */}
               <div className="mt-8 flex flex-wrap gap-2 border-t border-line-200 pt-6">
-                {article.tags.map((tag) => (
+                {article.tags.map((tag: string) => (
                   <span key={tag} className="tag-pill">
                     #{tag}
                   </span>
@@ -193,7 +219,7 @@ export default async function ArticlePage({
               </div>
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {related.map((item) => (
+              {related.map((item: any) => (
                 <ArticleCard key={item.id} article={item} />
               ))}
             </div>
