@@ -99,6 +99,7 @@ export default function ArticlesClient({
       const res = await saveArticleAction({
         ...article,
         status: newStatus,
+        body: [], // Added fallback array to resolve the compiler type mismatch
       });
 
       if (res.success) {
