@@ -8,16 +8,19 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+const connectionString = process.env.DATABASE_URL;
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  "postgres://postgres:postgres@localhost:5432/postgres";
+if (!connectionString) {
+  throw new Error(
+    "DATABASE_URL is not set. Check that .env.local exists in the project root " +
+    "(same folder as package.json) and that the dev server was started from that directory."
+  );
+}
 
 // ─── Shared Database Connection Pool ──────────────────────────────────────────
 export const pool = new Pool({
   connectionString,
-  ssl: { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: true },
   max: 2, // Low pool size to prevent EMAXCONNSESSION with serverless & Next.js build workers
 });
 
