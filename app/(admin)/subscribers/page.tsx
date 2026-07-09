@@ -21,7 +21,7 @@ export default async function SubscribersPage() {
     orderBy: { subscribedAt: "desc" },
   });
 
-  const subscribers = rows.map((s) => ({
+  const subscribers = rows.map((s: { id: string; email: string; subscribedAt: Date; active: boolean }) => ({
     id: s.id,
     email: s.email,
     subscribedAt: s.subscribedAt.toISOString(),

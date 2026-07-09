@@ -18,7 +18,7 @@ const connectionString =
 export const pool = new Pool({
   connectionString,
   ssl: { rejectUnauthorized: false },
-  max: 10, // Max connections in pool
+  max: 2, // Low pool size to prevent EMAXCONNSESSION with serverless & Next.js build workers
 });
 
 // ─── Legacy compatibility query function ─────────────────────────────────────
