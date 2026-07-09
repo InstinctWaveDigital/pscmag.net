@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// In-memory store for demo purposes. Replace with a real database or
-// email service provider (e.g. Mailchimp, Resend, Postmark) in production.
-const subscribers = new Set<string>();
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+    const email =
+      typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
 
     if (!EMAIL_RE.test(email)) {
       return NextResponse.json(
@@ -18,7 +16,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    subscribers.add(email);
+    await prisma.subscriber.upsert({
+      where: { email },
+      update: { active: true }, // re-subscribe if they had unsubscribed
+      create: { email, active: true },
+    });
 
     return NextResponse.json({ ok: true, message: "Subscribed successfully." });
   } catch {

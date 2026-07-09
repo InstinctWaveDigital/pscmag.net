@@ -1,0 +1,82 @@
+// Prisma schema for Africa Procurement & Supply Chain Magazine
+// Database: Supabase PostgreSQL (PgBouncer pooler for app, direct URL for migrations)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+model User {
+  id           String @id
+  username     String @unique
+  passwordHash String @map("password_hash")
+  name         String
+  role         String // 'admin' | 'editor' | 'writer'
+
+  @@map("users")
+}
+
+// ─── Articles ─────────────────────────────────────────────────────────────────
+
+model Article {
+  id        String @id
+  category  String
+  art       String
+  title     String
+  excerpt   String
+  author    String
+  role      String
+  date      String
+  readTime  String @map("read_time")
+  dateline  String
+  featured  Int    @default(0)
+  tags      String // comma-separated
+  body      String // JSON string (string[])
+  status    String // 'published' | 'draft' | 'archived'
+  updatedAt String @map("updated_at")
+
+  @@map("articles")
+}
+
+// ─── Media ────────────────────────────────────────────────────────────────────
+
+model Media {
+  id        String @id
+  filename  String
+  filepath  String
+  size      Int
+  mimeType  String @map("mime_type")
+  createdAt String @map("created_at")
+
+  @@map("media")
+}
+
+// ─── Newsletter Subscribers ───────────────────────────────────────────────────
+
+model Subscriber {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  subscribedAt DateTime @default(now()) @map("subscribed_at")
+  active      Boolean   @default(true)
+
+  @@map("subscribers")
+}
+
+// ─── Contact Messages ─────────────────────────────────────────────────────────
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String?
+  message   String
+  createdAt DateTime @default(now()) @map("created_at")
+  read      Boolean  @default(false)
+
+  @@map("contact_messages")
+}

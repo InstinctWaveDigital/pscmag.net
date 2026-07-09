@@ -1,78 +1,121 @@
-import { query } from "./db";
+import { prisma } from "./db";
 import { Article } from "./data";
 
-function mapRowToArticle(row: any): any {
-  if (!row) return null;
+// ─── Mapping Helpers ─────────────────────────────────────────────────────────
+
+function mapRowToArticle(row: {
+  id: string;
+  category: string;
+  art: string;
+  title: string;
+  excerpt: string;
+  author: string;
+  role: string;
+  date: string;
+  readTime: string;
+  dateline: string;
+  featured: number;
+  tags: string;
+  body: string;
+  status: string;
+  updatedAt: string;
+}): Article & { status: string; updatedAt: string } {
   return {
     id: row.id,
     category: row.category,
-    art: row.art,
+    art: row.art as any,
     title: row.title,
     excerpt: row.excerpt,
     author: row.author,
     role: row.role,
     date: row.date,
-    readTime: row.read_time,
+    readTime: row.readTime,
     dateline: row.dateline,
     featured: row.featured === 1,
     tags: row.tags ? row.tags.split(",").filter(Boolean) : [],
     body: row.body ? JSON.parse(row.body) : [],
     status: row.status,
-    updatedAt: row.updated_at,
+    updatedAt: row.updatedAt,
   };
 }
 
-export async function getArticleById(id: string, includeDrafts = false): Promise<Article | undefined> {
-  const sql = includeDrafts
-    ? "SELECT * FROM articles WHERE id = $1"
-    : "SELECT * FROM articles WHERE id = $1 AND status = 'published'";
-  const res = await query(sql, [id]);
-  if (res.rows.length === 0) return undefined;
-  return mapRowToArticle(res.rows[0]);
+// ─── Article Queries ──────────────────────────────────────────────────────────
+
+export async function getArticleById(
+  id: string,
+  includeDrafts = false
+): Promise<(Article & { status: string; updatedAt: string }) | undefined> {
+  const row = await prisma.article.findFirst({
+    where: includeDrafts
+      ? { id }
+      : { id, status: "published" },
+  });
+  if (!row) return undefined;
+  return mapRowToArticle(row as any);
 }
 
-export async function getArticlesByCategory(categoryName: string): Promise<Article[]> {
-  const res = await query(
-    "SELECT * FROM articles WHERE category = $1 AND status = 'published' ORDER BY date DESC",
-    [categoryName]
-  );
-  return res.rows.map(mapRowToArticle);
+export async function getArticlesByCategory(
+  categoryName: string
+): Promise<(Article & { status: string; updatedAt: string })[]> {
+  const rows = await prisma.article.findMany({
+    where: { category: categoryName, status: "published" },
+    orderBy: { date: "desc" },
+  });
+  return rows.map((r) => mapRowToArticle(r as any));
 }
 
-export async function getFeatured(): Promise<Article[]> {
-  const res = await query(
-    "SELECT * FROM articles WHERE featured = 1 AND status = 'published' ORDER BY date DESC"
-  );
-  return res.rows.map(mapRowToArticle);
+export async function getFeatured(): Promise<
+  (Article & { status: string; updatedAt: string })[]
+> {
+  const rows = await prisma.article.findMany({
+    where: { featured: 1, status: "published" },
+    orderBy: { date: "desc" },
+  });
+  return rows.map((r) => mapRowToArticle(r as any));
 }
 
-export async function getRelated(article: Article, n = 3): Promise<Article[]> {
-  const sameCatRes = await query(
-    "SELECT * FROM articles WHERE category = $1 AND id != $2 AND status = 'published' ORDER BY date DESC LIMIT $3",
-    [article.category, article.id, n]
-  );
-  const sameCat = sameCatRes.rows.map(mapRowToArticle);
+export async function getRelated(
+  article: Article,
+  n = 3
+): Promise<(Article & { status: string; updatedAt: string })[]> {
+  const sameCat = await prisma.article.findMany({
+    where: {
+      category: article.category,
+      id: { not: article.id },
+      status: "published",
+    },
+    orderBy: { date: "desc" },
+    take: n,
+  });
 
   const countNeeded = n - sameCat.length;
-  let others: Article[] = [];
+  let others: typeof sameCat = [];
+
   if (countNeeded > 0) {
-    const sameCatIds = [article.id, ...sameCat.map((a) => a.id)];
-    // Build query with dynamic parameters based on sameCatIds length
-    const placeholders = sameCatIds.map((_, i) => `$${i + 1}`).join(",");
-    const res = await query(
-      `SELECT * FROM articles WHERE id NOT IN (${placeholders}) AND status = 'published' ORDER BY date DESC LIMIT $${sameCatIds.length + 1}`,
-      [...sameCatIds, countNeeded]
-    );
-    others = res.rows.map(mapRowToArticle);
+    const excludeIds = [article.id, ...sameCat.map((a) => a.id)];
+    others = await prisma.article.findMany({
+      where: {
+        id: { notIn: excludeIds },
+        status: "published",
+      },
+      orderBy: { date: "desc" },
+      take: countNeeded,
+    });
   }
 
-  return [...sameCat, ...others].slice(0, n);
+  return [...sameCat, ...others]
+    .slice(0, n)
+    .map((r) => mapRowToArticle(r as any));
 }
 
-export async function getAllArticles(includeDrafts = false): Promise<Article[]> {
-  const sql = includeDrafts
-    ? "SELECT * FROM articles ORDER BY updated_at DESC, date DESC"
-    : "SELECT * FROM articles WHERE status = 'published' ORDER BY date DESC";
-  const res = await query(sql);
-  return res.rows.map(mapRowToArticle);
+export async function getAllArticles(
+  includeDrafts = false
+): Promise<(Article & { status: string; updatedAt: string })[]> {
+  const rows = await prisma.article.findMany({
+    where: includeDrafts ? undefined : { status: "published" },
+    orderBy: includeDrafts
+      ? [{ updatedAt: "desc" }, { date: "desc" }]
+      : { date: "desc" },
+  });
+  return rows.map((r) => mapRowToArticle(r as any));
 }
