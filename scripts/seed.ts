@@ -18,8 +18,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 // ── Prisma client (bypass Next.js env loading — use .env directly) ─────────
 const pool = new Pool({
   connectionString:
-    process.env.DATABASE_URL ||
-    "postgres://postgres.tkynerivtnuyslqaehuz:qUP2mbQWG8ccWAR8@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true",
+    process.env.POSTGRES_PRISMA_URL,
   ssl: { rejectUnauthorized: false },
 });
 const adapter = new PrismaPg(pool);

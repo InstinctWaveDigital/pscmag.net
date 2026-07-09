@@ -8,11 +8,11 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.POSTGRES_PRISMA_URL;
 
 if (!connectionString) {
   throw new Error(
-    "DATABASE_URL is not set. Check that .env.local exists in the project root " +
+    "POSTGRES_PRISMA_URL is not set. Check that .env.local exists in the project root " +
     "(same folder as package.json) and that the dev server was started from that directory."
   );
 }
