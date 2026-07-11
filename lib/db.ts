@@ -1,35 +1,31 @@
-/**
- * Database module for Africa Procurement & Supply Chain Magazine.
- * Exports a single shared pg connection Pool, a compatibility raw query wrapper,
- * and the Prisma Client singleton configured with the pg adapter.
- */
-
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
-const connectionString = process.env.POSTGRES_PRISMA_URL;
+const rawConnectionString = process.env.POSTGRES_PRISMA_URL;
 
-if (!connectionString) {
+if (!rawConnectionString) {
   throw new Error(
-    "POSTGRES_PRISMA_URL is not set. Check that .env.local exists in the project root " +
-    "(same folder as package.json) and that the dev server was started from that directory."
+    "POSTGRES_PRISMA_URL is not set. Check Vercel Environment Variables."
   );
 }
 
-// ─── Shared Database Connection Pool ──────────────────────────────────────────
+// Strip sslmode from the URL — it conflicts with the explicit ssl config below.
+// The ssl object is now the single source of truth for TLS behavior.
+const url = new URL(rawConnectionString);
+url.searchParams.delete("sslmode");
+const connectionString = url.toString();
+
 export const pool = new Pool({
   connectionString,
   ssl: { rejectUnauthorized: false },
-  max: 2, // Low pool size to prevent EMAXCONNSESSION with serverless & Next.js build workers
+  max: 2,
 });
 
-// ─── Legacy compatibility query function ─────────────────────────────────────
 export async function query(text: string, params?: any[]) {
   return pool.query(text, params);
 }
 
-// ─── Prisma Client Singleton (with pg adapter) ────────────────────────────────
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrisma() {
