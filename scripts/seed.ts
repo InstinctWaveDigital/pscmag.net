@@ -1,24 +1,26 @@
-/**
- * Seed script — run with: npm run db:seed
- *
- * Idempotent: safe to run multiple times.
- * - Upserts 3 default users (admin / editor / writer) with scrypt-hashed passwords
- *   compatible with the verifyPassword() function in lib/auth.ts
- * - Upserts all 14 articles from lib/data.ts as published stories
- */
-
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import crypto from "crypto";
 import { ARTICLES } from "../lib/data";
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+// ── Prisma client (loads .env via dotenv/config above) ─────────────────────
+const rawUrl = process.env.POSTGRES_PRISMA_URL;
+if (!rawUrl) {
+  throw new Error(
+    "POSTGRES_PRISMA_URL is not set. Check that .env exists in the project root and contains this variable."
+  );
+}
 
-// ── Prisma client (bypass Next.js env loading — use .env directly) ─────────
+// Strip sslmode from the query string — same fix applied at runtime in the
+// Next.js app — and let the Pool's `ssl` option handle TLS instead.
+const connectionString = rawUrl
+  .replace(/([?&])sslmode=[^&]+&?/, "$1")
+  .replace(/[?&]$/, "");
+
 const pool = new Pool({
-  connectionString:
-    process.env.POSTGRES_PRISMA_URL,
+  connectionString,
   ssl: { rejectUnauthorized: false },
 });
 const adapter = new PrismaPg(pool);

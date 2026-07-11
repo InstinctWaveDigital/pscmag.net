@@ -1,6 +1,3 @@
-// Prisma schema for Africa Procurement & Supply Chain Magazine
-// Database: Supabase PostgreSQL (PgBouncer pooler for app, direct URL for migrations)
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,19 +6,15 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── Users ───────────────────────────────────────────────────────────────────
-
 model User {
   id           String @id
   username     String @unique
   passwordHash String @map("password_hash")
   name         String
-  role         String // 'admin' | 'editor' | 'writer'
+  role         String
 
   @@map("users")
 }
-
-// ─── Articles ─────────────────────────────────────────────────────────────────
 
 model Article {
   id        String @id
@@ -35,15 +28,13 @@ model Article {
   readTime  String @map("read_time")
   dateline  String
   featured  Int    @default(0)
-  tags      String // comma-separated
-  body      String // JSON string (string[])
-  status    String // 'published' | 'draft' | 'archived'
+  tags      String
+  body      String
+  status    String
   updatedAt String @map("updated_at")
 
   @@map("articles")
 }
-
-// ─── Media ────────────────────────────────────────────────────────────────────
 
 model Media {
   id        String @id
@@ -56,18 +47,14 @@ model Media {
   @@map("media")
 }
 
-// ─── Newsletter Subscribers ───────────────────────────────────────────────────
-
 model Subscriber {
-  id          String    @id @default(cuid())
-  email       String    @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   subscribedAt DateTime @default(now()) @map("subscribed_at")
-  active      Boolean   @default(true)
+  active       Boolean  @default(true)
 
   @@map("subscribers")
 }
-
-// ─── Contact Messages ─────────────────────────────────────────────────────────
 
 model ContactMessage {
   id        String   @id @default(cuid())

@@ -6,6 +6,6 @@ export default defineConfig({
   schema: path.join("prisma", "schema.prisma"),
   datasource: {
     // Direct (non-pooling) URL used by CLI tools (db push / migrate)
-    url: "postgres://postgres.tkynerivtnuyslqaehuz:qUP2mbQWG8ccWAR8@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require",
+    url: "${process.env.POSTGRES_URL_NON_POOLING}",
   },
 });
