@@ -20,7 +20,7 @@ if (!connectionString) {
 // ─── Shared Database Connection Pool ──────────────────────────────────────────
 export const pool = new Pool({
   connectionString,
-  ssl: { rejectUnauthorized: true },
+  ssl: { rejectUnauthorized: false },
   max: 2, // Low pool size to prevent EMAXCONNSESSION with serverless & Next.js build workers
 });
 
