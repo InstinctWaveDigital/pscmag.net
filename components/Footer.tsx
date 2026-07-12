@@ -8,11 +8,11 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <Image
-              src="/assets/logo.png"
+              src="/assets/logo-white.png"
               alt="Africa Procurement and Supply Chain Mag"
               width={140}
               height={40}
-              className="mb-4 h-9 w-auto brightness-0 invert"
+              className="mb-4 h-9 w-auto"
             />
             <p className="max-w-[36ch] text-sm text-[#9AA0C2]">
               The continent&apos;s trade press for procurement, logistics and
