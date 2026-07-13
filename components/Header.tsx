@@ -1,21 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import MobileNav from "./MobileNav";
 import SearchOverlay from "./SearchOverlay";
+import WeatherTicker from "./WeatherTicker";
 
 export default function Header() {
   const [navOpen, setNavOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
+
+  function closeNav() {
+    setNavOpen(false);
+    // Return focus to the trigger that opened the panel
+    menuTriggerRef.current?.focus();
+  }
 
   return (
     <>
-      <a
-        href="#main"
-        className="skip-link"
-      >
+      <a href="#main" className="skip-link">
         Skip to main content
       </a>
 
@@ -23,17 +28,10 @@ export default function Header() {
         <div className="container-x flex h-9 items-center justify-between gap-4">
           <div className="flex items-center gap-5 overflow-hidden whitespace-nowrap">
             <span>Africa&apos;s Trade &amp; Supply Chain Press</span>
-            <span className="hidden sm:inline">
-              Lagos 31&deg;C &middot; Nairobi 22&deg;C &middot; Accra 29&deg;C
-            </span>
+            <WeatherTicker />
           </div>
           <div className="flex gap-5">
-            <Link href="/advertise" className="hover:text-white">
-              Advertise
-            </Link>
-            <Link href="/about#careers" className="hidden hover:text-white sm:inline">
-              Careers
-            </Link>
+            {/* Advertise removed here — lives as a single CTA in the main header/nav */}
             <Link href="/contact" className="hover:text-white">
               Contact
             </Link>
@@ -56,7 +54,6 @@ export default function Header() {
               className="h-9 w-auto"
               priority
             />
-
           </Link>
 
           <div className="flex items-center gap-2">
@@ -80,16 +77,21 @@ export default function Header() {
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
             </button>
+
+            {/* Sole "Advertise" entry point on desktop */}
             <Link
               href="/advertise"
               className="btn btn-outline hidden lg:inline-flex"
             >
               Advertise
             </Link>
+
             <Link href="/#newsletter" className="btn btn-primary hidden sm:inline-flex">
               Subscribe
             </Link>
+
             <button
+              ref={menuTriggerRef}
               type="button"
               className="icon-btn md:hidden"
               aria-label="Open menu"
@@ -114,7 +116,7 @@ export default function Header() {
           </div>
         </div>
 
-        <MobileNav open={navOpen} onClose={() => setNavOpen(false)} />
+        <MobileNav open={navOpen} onClose={closeNav} />
       </header>
 
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />

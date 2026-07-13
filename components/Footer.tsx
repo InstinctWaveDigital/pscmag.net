@@ -107,11 +107,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/about#careers" className="hover:text-white hover:underline">
-                  Careers
-                </Link>
-              </li>
-              <li>
                 <Link href="/advertise" className="hover:text-white hover:underline">
                   Advertise
                 </Link>

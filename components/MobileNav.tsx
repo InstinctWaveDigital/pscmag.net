@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CATEGORIES } from "@/lib/data";
 
+// "Advertise" intentionally excluded — it has a dedicated CTA slot
+// in both the desktop header and the mobile panel footer, so it
+// doesn't need to compete with content categories here.
 const NAV_ITEMS: { href: string; label: string }[] = [
   { href: "/", label: "Home" },
   { href: "/category/procurement", label: "Procurement" },
@@ -17,7 +20,6 @@ const NAV_ITEMS: { href: string; label: string }[] = [
   },
   { href: "/category/leadership-and-people", label: "People" },
   { href: "/about", label: "About" },
-  { href: "/advertise", label: "Advertise" },
 ];
 
 export default function MobileNav({
@@ -28,7 +30,9 @@ export default function MobileNav({
   onClose: () => void;
 }) {
   const pathname = usePathname();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Escape closes the panel
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -37,20 +41,43 @@ export default function MobileNav({
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // Auto-close on route change
   useEffect(() => {
     onClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
+  // Focus management: move focus into the panel on open,
+  // and hide the rest of the page from assistive tech while it's open
+  useEffect(() => {
+    const main = document.getElementById("main");
+
+    if (open) {
+      closeButtonRef.current?.focus();
+      main?.setAttribute("inert", "");
+      main?.setAttribute("aria-hidden", "true");
+    } else {
+      main?.removeAttribute("inert");
+      main?.removeAttribute("aria-hidden");
+    }
+
+    return () => {
+      main?.removeAttribute("inert");
+      main?.removeAttribute("aria-hidden");
+    };
+  }, [open]);
+
   return (
     <>
-      {/* Desktop nav */}
+      {/* Desktop nav — no-wrap with horizontal scroll fallback instead of
+          flex-wrap, so a full row of labels never breaks the sticky header's
+          fixed height on tablet/small-laptop widths. */}
       <nav
         aria-label="Primary"
         className="hidden border-t border-line-200 md:block"
       >
-        <div className="container-x">
-          <ul className="flex flex-wrap">
+        <div className="container-x overflow-x-auto">
+          <ul className="flex flex-nowrap whitespace-nowrap">
             {NAV_ITEMS.map((item) => {
               const active =
                 item.href === "/"
@@ -92,6 +119,7 @@ export default function MobileNav({
         }`}
       >
         <button
+          ref={closeButtonRef}
           type="button"
           className="icon-btn mb-4 ml-auto"
           onClick={onClose}
@@ -110,6 +138,7 @@ export default function MobileNav({
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
+
         <ul>
           {NAV_ITEMS.map((item) => (
             <li key={item.href} className="border-b border-line-200">
@@ -122,7 +151,9 @@ export default function MobileNav({
             </li>
           ))}
         </ul>
+
         <div className="mt-6 flex flex-col gap-3">
+          {/* Sole "Advertise" entry point on mobile */}
           <Link href="/advertise" className="btn btn-outline btn-block">
             Advertise with us
           </Link>
@@ -130,6 +161,7 @@ export default function MobileNav({
             Subscribe
           </Link>
         </div>
+
         <div className="mt-6 text-xs text-ink-300">
           {CATEGORIES.length} sections &middot; updated daily
         </div>

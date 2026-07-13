@@ -29,7 +29,7 @@ export default async function HomePage() {
   }
 
   const heroMain = feats[0] || articles[0];
-  
+
   if (!heroMain) {
     return (
       <div className="container-x py-24 text-center font-mono text-ink-300">
@@ -54,6 +54,22 @@ export default async function HomePage() {
     <>
       {/* Hero */}
       <section className="hero-watermark relative overflow-hidden bg-ink-900 text-white">
+        {heroMain.art && (
+          <div className="absolute inset-0">
+            <Image
+              src={heroMain.art}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+            {/* Overlay for text legibility over the photo */}
+            <div className="absolute inset-0 bg-gradient-to-t from-ink-900 via-ink-900/80 to-ink-900/40" />
+            <div className="absolute inset-0 bg-ink-900/30" />
+          </div>
+        )}
+
         <div className="container-x relative z-10 py-14 sm:py-20">
           <div className="grid grid-cols-1 items-end gap-10 lg:grid-cols-[1.5fr_1fr]">
             <div className="flex flex-col gap-4">

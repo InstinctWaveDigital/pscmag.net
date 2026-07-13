@@ -105,7 +105,6 @@ export default function ContactForm() {
           <option value="Story tip">Story tip</option>
           <option value="Write for us">Write for us</option>
           <option value="Advertising">Advertising</option>
-          <option value="Careers">Careers</option>
         </select>
       </div>
 

@@ -35,7 +35,7 @@ export default function PrivacyPage() {
         </p>
         <ul className="list-disc pl-5 space-y-2">
           <li><strong>Subscription Data:</strong> Email addresses submitted for receiving our publication briefings.</li>
-          <li><strong>Contact Submissions:</strong> Names, email addresses, subjects, and message content submitted for tips, editorial inquiries, or careers.</li>
+          <li><strong>Contact Submissions:</strong> Names, email addresses, subjects, and message content submitted for tips or editorial inquiries.</li>
           <li><strong>Usage Data:</strong> Anonymized analytical logs including browser type, page views, and time spent on our site to improve reader experience.</li>
         </ul>
 

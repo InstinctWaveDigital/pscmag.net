@@ -103,21 +103,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="bg-ink-900 py-14 text-white" id="careers">
-        <div className="container-x">
-          <div className="section-head !border-white/20"><div><span className="eyebrow">Join Us</span><h2 className="text-3xl text-white">Careers</h2></div></div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {ROLES.map((r) => (
-              <div key={r.title} className="rounded-lg border border-white/15 p-5">
-                <span className="manifest on-dark">{r.loc}</span>
-                <h3 className="mt-3 text-lg font-bold text-white">{r.title}</h3>
-                <p className="mt-2 text-sm text-[#B9BDD4]">{r.desc}</p>
-                <Link href="/contact#careers-apply" className="btn btn-outline-light mt-4">Apply now</Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
     </>
   );
 }

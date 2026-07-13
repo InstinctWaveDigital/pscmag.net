@@ -4,7 +4,7 @@ import ContactForm from "@/components/ContactForm";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Get in touch with Africa Procurement and Supply Chain Mag — story tips, advertising, careers and general enquiries.",
+  description: "Get in touch with Africa Procurement and Supply Chain Mag — story tips, advertising and general enquiries.",
   alternates: { canonical: "/contact" },
 };
 
@@ -43,12 +43,6 @@ export default function ContactPage() {
                 policy change we should be covering? Use the form and select
                 &ldquo;Story tip&rdquo; — sensitive tips are handled by our editorial
                 desk only.
-              </p>
-            </div>
-            <div id="careers-apply" className="sidebar-box">
-              <h3 className="mb-3 font-mono text-xs uppercase tracking-wider text-red-600">Careers</h3>
-              <p className="text-sm text-ink-500">
-                See open roles on our <Link href="/about#careers" className="font-semibold text-blue-700 hover:underline">Careers page</Link>, then apply using the form and selecting &ldquo;Careers&rdquo;.
               </p>
             </div>
             <div className="sidebar-box">
