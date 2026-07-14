@@ -3,11 +3,10 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import ArticleCard from "@/components/ArticleCard";
 import NewsletterSection from "@/components/NewsletterSection";
-import { CATEGORIES, formatDate, SITE } from "@/lib/data";
+import { CATEGORIES, formatDate, SITE, getArtUrl } from "@/lib/data";
 import { getFeatured, getAllArticles } from "@/lib/db-queries";
 import Ticker from "@/components/Ticker";
 
-// Forces the page to bypass static rendering at build time when your database is offline
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -20,7 +19,6 @@ export default async function HomePage() {
   let feats: any[] = [];
   let articles: any[] = [];
 
-  // Safely wrap queries to capture runtime execution contexts
   try {
     feats = await getFeatured();
     articles = await getAllArticles();
@@ -45,7 +43,9 @@ export default async function HomePage() {
   const latestGrid = articles.filter((a) => !excludeIds.has(a.id)).slice(0, 4);
   latestGrid.forEach((a) => excludeIds.add(a.id));
 
-  const awardsArticles = articles.filter((a) => a.category === "Awards & Events" && !excludeIds.has(a.id)).slice(0, 3);
+  // "Events" is the real category name in lib/data.ts — "Awards & Events" never matched
+  const eventsCategory = CATEGORIES.find((c) => c.name === "Events");
+  const awardsArticles = articles.filter((a) => a.category === "Events" && !excludeIds.has(a.id)).slice(0, 3);
   awardsArticles.forEach((a) => excludeIds.add(a.id));
 
   const editorsPicks = articles.filter((a) => !excludeIds.has(a.id)).slice(0, 4);
@@ -54,21 +54,18 @@ export default async function HomePage() {
     <>
       {/* Hero */}
       <section className="hero-watermark relative overflow-hidden bg-ink-900 text-white">
-        {heroMain.art && (
-          <div className="absolute inset-0">
-            <Image
-              src={heroMain.art}
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover"
-            />
-            {/* Overlay for text legibility over the photo */}
-            <div className="absolute inset-0 bg-gradient-to-t from-ink-900 via-ink-900/80 to-ink-900/40" />
-            <div className="absolute inset-0 bg-ink-900/30" />
-          </div>
-        )}
+        <div className="absolute inset-0">
+          <Image
+            src={getArtUrl(heroMain.art)}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink-900 via-ink-900/80 to-ink-900/40" />
+          <div className="absolute inset-0 bg-ink-900/30" />
+        </div>
 
         <div className="container-x relative z-10 py-14 sm:py-20">
           <div className="grid grid-cols-1 items-end gap-10 lg:grid-cols-[1.5fr_1fr]">
@@ -93,29 +90,31 @@ export default async function HomePage() {
                 </Link>
               </div>
             </div>
-            <div className="flex flex-col gap-5 border-t border-white/15 pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-              <h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-white">
-                Also making headlines
-              </h2>
-              {heroSide.map((a) => (
-                <div key={a.id} className="flex flex-col gap-1.5 border-b border-white/10 pb-4 last:border-0 last:pb-0">
-                  <span className="manifest on-dark w-fit">
-                    {a.dateline} &middot; {a.category}
-                  </span>
-                  <Link href={`/article/${a.id}`} className="font-display text-lg font-bold hover:text-[#EBD9B0]">
-                    {a.title}
-                  </Link>
-                </div>
-              ))}
-            </div>
+            {heroSide.length > 0 && (
+              <div className="flex flex-col gap-5 border-t border-white/15 pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                <h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-white">
+                  Also making headlines
+                </h2>
+                {heroSide.map((a) => (
+                  <div key={a.id} className="flex flex-col gap-1.5 border-b border-white/10 pb-4 last:border-0 last:pb-0">
+                    <span className="manifest on-dark w-fit">
+                      {a.dateline} &middot; {a.category}
+                    </span>
+                    <Link href={`/article/${a.id}`} className="font-display text-lg font-bold hover:text-[#EBD9B0]">
+                      {a.title}
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      <Ticker items={articles.slice(0, 8)} />
+      {articles.length > 0 && <Ticker items={articles.slice(0, 8)} />}
 
       {/* Categories */}
-      <section className="bg-paper-100 py-14">
+      <section className="bg-paper-100 py-14" id="sections">
         <div className="container-x">
           <div className="section-head">
             <div>
@@ -140,61 +139,67 @@ export default async function HomePage() {
       </section>
 
       {/* Latest */}
-      <section className="py-14">
-        <div className="container-x">
-          <div className="section-head">
-            <div>
-              <span className="eyebrow">Just In</span>
-              <h2 className="text-3xl">Latest Stories</h2>
+      {latestGrid.length > 0 && (
+        <section className="py-14">
+          <div className="container-x">
+            <div className="section-head">
+              <div>
+                <span className="eyebrow">Just In</span>
+                <h2 className="text-3xl">Latest Stories</h2>
+              </div>
+              <Link href="#sections" className="flex items-center gap-1 font-semibold text-blue-700 hover:underline">
+                Browse all sections &rarr;
+              </Link>
             </div>
-            <Link href="/category/procurement" className="flex items-center gap-1 font-semibold text-blue-700 hover:underline">
-              View all &rarr;
-            </Link>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {latestGrid.map((a) => (
+                <ArticleCard key={a.id} article={a} />
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {latestGrid.map((a) => (
-              <ArticleCard key={a.id} article={a} />
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Awards dark section */}
-      <section className="bg-ink-900 py-14 text-white">
-        <div className="container-x">
-          <div className="section-head !border-white/25">
-            <div>
-              <span className="eyebrow">On Our Stage</span>
-              <h2 className="text-3xl text-white">Awards &amp; Events</h2>
+      {awardsArticles.length > 0 && eventsCategory && (
+        <section className="bg-ink-900 py-14 text-white">
+          <div className="container-x">
+            <div className="section-head !border-white/25">
+              <div>
+                <span className="eyebrow">On Our Stage</span>
+                <h2 className="text-3xl text-white">Awards &amp; Events</h2>
+              </div>
+              <Link href={`/category/${eventsCategory.slug}`} className="flex items-center gap-1 font-semibold text-[#EBD9B0] hover:underline">
+                View all &rarr;
+              </Link>
             </div>
-            <Link href="/category/awards-and-events" className="flex items-center gap-1 font-semibold text-[#EBD9B0] hover:underline">
-              View all &rarr;
-            </Link>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {awardsArticles.map((a) => (
+                <ArticleCard key={a.id} article={a} />
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {awardsArticles.map((a) => (
-              <ArticleCard key={a.id} article={a} />
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Editors picks */}
-      <section className="py-14">
-        <div className="container-x">
-          <div className="section-head">
-            <div>
-              <span className="eyebrow">Deep Dives</span>
-              <h2 className="text-3xl">Editors&rsquo; Picks</h2>
+      {editorsPicks.length > 0 && (
+        <section className="py-14">
+          <div className="container-x">
+            <div className="section-head">
+              <div>
+                <span className="eyebrow">Deep Dives</span>
+                <h2 className="text-3xl">Editors&rsquo; Picks</h2>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {editorsPicks.map((a) => (
+                <ArticleCard key={a.id} article={a} variant="row" />
+              ))}
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {editorsPicks.map((a) => (
-              <ArticleCard key={a.id} article={a} variant="row" />
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Stats */}
       <section className="bg-paper-100 py-14">
