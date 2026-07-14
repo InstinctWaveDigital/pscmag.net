@@ -5,10 +5,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import { SITE } from "@/lib/data";
-import NewsletterPopup from "@/components/NewsletterPopup";
-import  Script  from "next/script";
-
-
+// import NewsletterPopup from "@/components/NewsletterPopup";
+import Script from "next/script";
 
 const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
@@ -71,6 +69,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    // SITE.twitter is currently "@" in lib/data.ts — not a valid handle.
+    // Set it to your real handle (e.g. "@apscmag") or omit site/creator
+    // entirely until you have one; an invalid handle can cause Twitter's
+    // card validator to reject the card outright.
     site: SITE.twitter,
     creator: SITE.twitter,
     title: `${SITE.name} — Trade Press for Procurement & Supply Chain Leaders`,
@@ -111,13 +113,17 @@ export default function RootLayout({
     "@type": "NewsMediaOrganization",
     name: SITE.name,
     url: SITE.url,
-    logo: `${SITE.url}/assets/logo.png`,
+    logo: {
+      "@type": "ImageObject",
+      url: `${SITE.url}/assets/logo.png`,
+      width: 512,
+      height: 512,
+    },
     description: SITE.description,
-    sameAs: [
-      "https://linkedin.com",
-      "https://x.com",
-      "https://instagram.com",
-    ],
+    // Replace with your real profile URLs once you have them. Linking to
+    // bare platform homepages (https://linkedin.com etc.) actively hurts
+    // entity disambiguation rather than helping it — omit until real.
+    sameAs: [] as string[],
   };
 
   return (
@@ -130,8 +136,8 @@ export default function RootLayout({
         />
         <Header />
         <main id="main">{children}</main>
-        <Script src="https://js.paystack.co/v2/inline.js" strategy="afterInteractive" />
-        <NewsletterPopup />
+        {/* <Script src="https://js.paystack.co/v2/inline.js" strategy="afterInteractive" /> */}
+        {/* <NewsletterPopup /> */}
         <Footer />
         <BackToTop />
       </body>

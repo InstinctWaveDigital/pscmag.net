@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { buildMetadata } from "@/lib/seo";
 import ArticleCard from "@/components/ArticleCard";
 import { CATEGORIES, getCategoryBySlug } from "@/lib/data";
 import { getArticlesByCategory } from "@/lib/db-queries";
@@ -14,6 +15,7 @@ export function generateStaticParams() {
   return CATEGORIES.map((c) => ({ slug: c.slug }));
 }
 
+
 export async function generateMetadata({
   params,
 }: {
@@ -22,11 +24,13 @@ export async function generateMetadata({
   const { slug } = await params;
   const category = getCategoryBySlug(slug);
   if (!category) return {};
-  return {
+
+  return buildMetadata({
     title: category.name,
     description: category.desc,
-    alternates: { canonical: `/category/${category.slug}` },
-  };
+    path: `/category/${category.slug}`,
+    keywords: [category.name, `${category.name} Africa`, `${category.name} news`],
+  });
 }
 
 export default function CategoryPage({

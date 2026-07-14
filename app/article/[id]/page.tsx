@@ -23,33 +23,26 @@ export async function generateStaticParams() {
   }
 }
 
+import { buildMetadata } from "@/lib/seo";
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  
-  try {
-    const article = await getArticleById(id);
-    if (!article) return {};
-    return {
-      title: article.title,
-      description: article.excerpt,
-      alternates: { canonical: `/article/${article.id}` },
-      openGraph: {
-        type: "article",
-        title: article.title,
-        description: article.excerpt,
-        url: `https://www.africaprocurementmag.com/article/${article.id}`,
-        publishedTime: article.date,
-        authors: [article.author],
-        tags: article.tags,
-      },
-    };
-  } catch {
-    return { title: "Article | APSC Mag" };
-  }
+  const article = await getArticleById(id);
+  if (!article) return {};
+
+  return buildMetadata({
+    title: article.title,
+    description: article.excerpt,
+    path: `/article/${article.id}`,
+    keywords: [...article.tags, article.category, article.dateline],
+    type: "article",
+    publishedTime: article.date,
+    authors: [article.author],
+  });
 }
 
 export default async function ArticlePage({
