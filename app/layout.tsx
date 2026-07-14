@@ -5,6 +5,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import { SITE } from "@/lib/data";
+import NewsletterPopup from "@/components/NewsletterPopup";
+import  Script  from "next/script";
 
 
 
@@ -128,6 +130,8 @@ export default function RootLayout({
         />
         <Header />
         <main id="main">{children}</main>
+        <Script src="https://js.paystack.co/v2/inline.js" strategy="afterInteractive" />
+        <NewsletterPopup />
         <Footer />
         <BackToTop />
       </body>
