@@ -32,14 +32,14 @@ export interface Category {
 
 export const CATEGORIES: Category[] = [
     {
-        name: "Procurement",
+        name: "Procurement & Governance",
         slug: "procurement",
         art: "procurement",
         desc: "Sourcing strategy, supplier management and category best practice.",
     },
     {
-        name: "Logistics & Freight",
-        slug: "logistics-and-freight",
+        name: "Logistics & Supply Chain",
+        slug: "logistics-and-supply-chain",
         art: "logistics",
         desc: "Ports, freight forwarding, warehousing and last-mile distribution.",
     },
@@ -50,22 +50,16 @@ export const CATEGORIES: Category[] = [
         desc: "AfCFTA, customs reform and the regulation shaping cross-border trade.",
     },
     {
-        name: "Awards & Events",
-        slug: "awards-and-events",
+        name: "Events",
+        slug: "events",
         art: "awards",
-        desc: "Shortlists, winners and recaps from Africa's leading industry awards.",
+        desc: "Conferences, awards and networking opportunities for procurement and supply chain professionals.",
     },
     {
-        name: "Technology & Digital Supply Chain",
-        slug: "technology-and-digital-supply-chain",
-        art: "technology",
-        desc: "AI, automation and digitisation across the supply chain.",
-    },
-    {
-        name: "Leadership & People",
-        slug: "leadership-and-people",
+        name: "Features & Interviews",
+        slug: "features-and-interviews",
         art: "leadership",
-        desc: "Profiles, careers and the people leading African supply chains.",
+        desc: "In-depth interviews and feature stories with procurement and supply chain leaders across Africa.",
     },
 ];
 

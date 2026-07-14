@@ -11,7 +11,7 @@ import { CATEGORIES } from "@/lib/data";
 const NAV_ITEMS: { href: string; label: string }[] = [
   { href: "/", label: "Home" },
   { href: "/category/procurement", label: "Procurement & Governance" },
-  { href: "/category/logistics-and-freight", label: "Logistics & Supply Chain" },
+  { href: "/category/logistics-and-supply-chain", label: "Logistics & Supply Chain" },
   { href: "/category/trade-policy", label: "Trade Policy" },
   { href: "/category/events", label: "Events" },
   { href: "/category/features-and-interviews", label: "Features and Interviews" },
