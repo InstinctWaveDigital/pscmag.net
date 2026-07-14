@@ -6,6 +6,7 @@ import ArticleCard from "@/components/ArticleCard";
 import { CATEGORIES, getCategoryBySlug } from "@/lib/data";
 import { getArticlesByCategory } from "@/lib/db-queries";
 
+export const dynamic = "force-dynamic";
 const PAGE_SIZE = 6;
 
 

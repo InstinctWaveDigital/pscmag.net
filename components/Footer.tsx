@@ -59,13 +59,13 @@ export default function Footer() {
             </h3>
             <ul className="space-y-3 text-sm">
               <li>
-                <Link href="/category/procurement" className="hover:text-white hover:underline">
-                  Procurement
+                <Link href="/category/procurement-and-governance" className="hover:text-white hover:underline">
+                  Procurement & Governance
                 </Link>
               </li>
               <li>
-                <Link href="/category/logistics-and-freight" className="hover:text-white hover:underline">
-                  Logistics &amp; Freight
+                <Link href="/category/logistics-and-supply-chain" className="hover:text-white hover:underline">
+                  Logistics &amp; Supply Chain
                 </Link>
               </li>
               <li>
@@ -74,18 +74,13 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/category/awards-and-events" className="hover:text-white hover:underline">
-                  Awards &amp; Events
+                <Link href="/category/events" className="hover:text-white hover:underline">
+                  Events
                 </Link>
               </li>
               <li>
-                <Link href="/category/technology-and-digital-supply-chain" className="hover:text-white hover:underline">
-                  Technology
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/leadership-and-people" className="hover:text-white hover:underline">
-                  Leadership &amp; People
+                <Link href="/category/features-and-interviews" className="hover:text-white hover:underline">
+                  Features & Interviews
                 </Link>
               </li>
             </ul>
