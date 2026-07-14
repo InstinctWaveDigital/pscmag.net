@@ -112,7 +112,6 @@ export default async function HomePage() {
       </section>
 
       {articles.length > 0 && <Ticker items={articles.slice(0, 8)} />}
-
       {/* Categories */}
       <section className="bg-paper-100 py-14" id="sections">
         <div className="container-x">
@@ -123,17 +122,27 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {CATEGORIES.map((c) => (
-              <Link key={c.slug} href={`/category/${c.slug}`} className="card">
-                <div className="card__art relative">
-                  <Image src={`/images/${c.art}.svg`} alt="" fill sizes="33vw" className="object-cover" />
-                </div>
-                <div className="p-5">
-                  <h3 className="font-display text-lg font-bold">{c.name}</h3>
-                  <p className="mt-1 text-sm text-ink-500">{c.desc}</p>
-                </div>
-              </Link>
-            ))}
+            {CATEGORIES.map((c) => {
+              // Latest published article in this category, sorted by date desc.
+              // articles is already sorted by date desc from getAllArticles(),
+              // so the first match here is the most recent one.
+              const latestInCategory = articles.find((a) => a.category === c.name);
+              const artSrc = latestInCategory
+                ? getArtUrl(latestInCategory.art)
+                : `/images/${c.art}.svg`;
+
+              return (
+                <Link key={c.slug} href={`/category/${c.slug}`} className="card">
+                  <div className="card__art relative">
+                    <Image src={artSrc} alt="" fill sizes="33vw" className="object-cover" />
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-display text-lg font-bold">{c.name}</h3>
+                    <p className="mt-1 text-sm text-ink-500">{c.desc}</p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -167,7 +176,7 @@ export default async function HomePage() {
             <div className="section-head !border-white/25">
               <div>
                 <span className="eyebrow">On Our Stage</span>
-                <h2 className="text-3xl text-white">Awards &amp; Events</h2>
+                <h2 className="text-3xl text-white">Events</h2>
               </div>
               <Link href={`/category/${eventsCategory.slug}`} className="flex items-center gap-1 font-semibold text-[#EBD9B0] hover:underline">
                 View all &rarr;
