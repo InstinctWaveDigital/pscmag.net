@@ -473,7 +473,7 @@ export const SITE = {
     shortName: "APSC Mag",
     description:
         "The continent's trade press for procurement, logistics and supply chain leaders — covering policy, technology, awards and the people shaping how Africa moves goods and does business.",
-    url: "https://www.oscmag.net",
+    url: "https://www.pscmag.net",
     twitter: "@",
     locale: "en_US",
 };
