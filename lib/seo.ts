@@ -2,14 +2,66 @@ import type { Metadata } from "next";
 import { SITE } from "./data";
 
 const BASE_KEYWORDS = [
+  // --- BASE KEYWORDS (Originals) ---
   "Africa procurement",
   "supply chain Africa",
   "AfCFTA",
   "African logistics",
   "African trade policy",
   "procurement awards Africa",
+  "procurement and supply chain",
+  "procurement and supply chain magazine",
+  "Africa Procurement and Supply Chain Magazine",
+  "Africa trade policy update",
+  "Procurement leaders",
+  "procurement and supply chain magazine, Africa",
   "African ports",
   "supply chain magazine",
+
+  // --- AfCFTA & INTRA-AFRICAN TRADE ---
+  "AfCFTA trade rules",
+  "intra-African trade barriers",
+  "AfCFTA rules of origin",
+  "regional value chains Africa",
+  "African Continental Free Trade Area updates",
+  "Pan-African payment settlement system PAPSS",
+  "cross-border trade Africa",
+  "non-tariff barriers Africa",
+
+  // --- REGIONAL LOGISTICS & INFRASTRUCTURE ---
+  "East Africa logistics corridors",
+  "West African port congestion",
+  "SADC trade agreements",
+  "ECOWAS procurement guidelines",
+  "North Africa supply chain",
+  "maritime shipping Africa",
+  "African air cargo logistics",
+  "special economic zones Africa SEZ",
+
+  // --- PUBLIC & SUSTAINABLE PROCUREMENT ---
+  "public procurement reform Africa",
+  "sustainable sourcing Africa",
+  "green supply chain Africa",
+  "African supplier diversity",
+  "ESG in African procurement",
+  "local content policy Africa",
+
+  // --- DIGITAL TRANSFORMATION & TECH ---
+  "e-procurement software Africa",
+  "supply chain digitization Africa",
+  "fintech in African logistics",
+  "last mile delivery Africa",
+  "freight tech startups Africa",
+  "procure to pay Africa P2P",
+
+  // --- EXECUTIVE, CAREERS & EVENTS ---
+  "CIPS Africa",
+  "African supply chain association",
+  "procurement summits Africa",
+  "supply chain jobs Lagos Nairobi Johannesburg",
+  "chief procurement officer Africa CPO",
+  "African logistics professional certification",
+  "procurement excellence awards Africa"
 ];
 
 interface BuildMetadataOptions {
