@@ -11,6 +11,7 @@ import ViewTracker from "@/components/ViewTracker";
 
 // Fallback configuration to dynamically render missing slugs at runtime if database was offline during build
 export const dynamicParams = true;
+export const params = "force-dynamic"
 
 export async function generateStaticParams() {
   try {
