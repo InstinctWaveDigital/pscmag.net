@@ -75,10 +75,6 @@ export const metadata: Metadata = {
     description: SITE.description,
     images: ["/opengraph-image"],
   },
-  verification: {
-    google: "google-site-verification=pOQ0nhuFm37SQ1lPf0Nsf32wpZfEnDNFb1zA64s4izE",
-    
-  },
   robots: {
     index: true,
     follow: true,

@@ -89,15 +89,6 @@ export default function LoginPage() {
             {loading ? "Verifying..." : "Enter Workspace →"}
           </button>
         </form>
-
-        <div className="mt-6 border-t border-white/8 pt-6 text-center">
-          <p className="text-[0.68rem] font-mono text-[#374151] leading-relaxed">
-            Default credentials for development:<br />
-            <span className="text-[#4B5563]">admin / admin123</span> &middot;{" "}
-            <span className="text-[#4B5563]">editor / editor123</span> &middot;{" "}
-            <span className="text-[#4B5563]">writer / writer123</span>
-          </p>
-        </div>
       </div>
     </div>
   );
