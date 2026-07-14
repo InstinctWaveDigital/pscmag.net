@@ -10,7 +10,7 @@ import { CATEGORIES } from "@/lib/data";
 // doesn't need to compete with content categories here.
 const NAV_ITEMS: { href: string; label: string }[] = [
   { href: "/", label: "Home" },
-  { href: "/category/procurement", label: "Procurement & Governance" },
+  { href: "/category/procurement-and-governance", label: "Procurement & Governance" },
   { href: "/category/logistics-and-supply-chain", label: "Logistics & Supply Chain" },
   { href: "/category/trade-policy", label: "Trade Policy" },
   { href: "/category/events", label: "Events" },

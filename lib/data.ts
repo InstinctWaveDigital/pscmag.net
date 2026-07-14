@@ -33,7 +33,7 @@ export interface Category {
 export const CATEGORIES: Category[] = [
     {
         name: "Procurement & Governance",
-        slug: "procurement",
+        slug: "procurement-and-governance",
         art: "procurement",
         desc: "Sourcing strategy, supplier management and category best practice.",
     },
