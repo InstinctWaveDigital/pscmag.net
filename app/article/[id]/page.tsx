@@ -7,6 +7,7 @@ import ArticleCard from "@/components/ArticleCard";
 import NewsletterSection from "@/components/NewsletterSection";
 import { getArticleById, getRelated, getAllArticles } from "@/lib/db-queries";
 import { formatDate, initials, slugifyCategory, getArtUrl } from "@/lib/data";
+import ViewTracker from "@/components/ViewTracker";
 
 // Fallback configuration to dynamically render missing slugs at runtime if database was offline during build
 export const dynamicParams = true;
@@ -96,6 +97,8 @@ export default async function ArticlePage({
               {article.title}
             </span>
           </nav>
+
+          <ViewTracker articleId={article.id} />
 
           <header className="flex flex-col gap-4">
             <span className="manifest self-start">

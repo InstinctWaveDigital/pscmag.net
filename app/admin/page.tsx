@@ -40,17 +40,13 @@ function StatCard({
   );
 }
 
-const WEEKLY_VIEWS = [38, 52, 47, 61, 55, 79, 84, 72, 91, 88, 105, 120];
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const WEEK_VALS = [4800, 6200, 5100, 7400, 8800, 3200, 2100];
-
 export default async function AdminDashboard() {
   const session = await getSession();
   if (!session) {
     redirect("/admin/login");
   }
 
-  // Fetch count stats from PostgreSQL
+  // Article status counts
   const pubRes = await query("SELECT COUNT(*) FROM articles WHERE status = 'published'");
   const draftRes = await query("SELECT COUNT(*) FROM articles WHERE status = 'draft'");
   const archRes = await query("SELECT COUNT(*) FROM articles WHERE status = 'archived'");
@@ -63,7 +59,42 @@ export default async function AdminDashboard() {
     total: parseInt(totalRes.rows[0].count, 10),
   };
 
-  // Fetch recent articles (optionally filter by author for Writers)
+  // Real monthly views — last 12 months, zero-filled for months with no data
+  const monthlyRes = await query(`
+    SELECT to_char(month, 'Mon') AS label, COALESCE(v.count, 0)::int AS count
+    FROM generate_series(
+      date_trunc('month', now()) - interval '11 months',
+      date_trunc('month', now()),
+      interval '1 month'
+    ) AS month
+    LEFT JOIN (
+      SELECT date_trunc('month', viewed_at) AS month, COUNT(*) AS count
+      FROM page_views
+      GROUP BY 1
+    ) v USING (month)
+    ORDER BY month
+  `);
+  const monthlyViews = monthlyRes.rows as { label: string; count: number }[];
+
+  // Real daily views for the current week (Mon–Sun), zero-filled
+  const weekRes = await query(`
+    SELECT to_char(day, 'Dy') AS label, COALESCE(v.count, 0)::int AS count
+    FROM generate_series(
+      date_trunc('week', now()),
+      date_trunc('week', now()) + interval '6 days',
+      interval '1 day'
+    ) AS day
+    LEFT JOIN (
+      SELECT date_trunc('day', viewed_at) AS day, COUNT(*) AS count
+      FROM page_views
+      GROUP BY 1
+    ) v USING (day)
+    ORDER BY day
+  `);
+  const weekViews = weekRes.rows as { label: string; count: number }[];
+  const weekTotal = weekViews.reduce((sum, d) => sum + d.count, 0);
+
+  // Recent articles (Writers see only their own)
   let recentRes;
   if (session.role === "writer") {
     recentRes = await query(
@@ -76,6 +107,9 @@ export default async function AdminDashboard() {
     );
   }
   const recent = recentRes.rows;
+
+  const maxMonthly = Math.max(...monthlyViews.map((m) => m.count), 1);
+  const maxWeekly = Math.max(...weekViews.map((d) => d.count), 1);
 
   return (
     <div className="p-6 xl:p-8">
@@ -103,7 +137,7 @@ export default async function AdminDashboard() {
             <div>
               <h2 className="text-sm font-semibold text-white">Reader Engagement</h2>
               <p className="mt-0.5 font-mono text-[0.68rem] text-[#4B5563]">
-                Monthly page views · simulated
+                Monthly page views
               </p>
             </div>
             <span className="rounded-full border border-white/8 px-2.5 py-1 font-mono text-[0.65rem] text-[#6B7280]">
@@ -111,22 +145,20 @@ export default async function AdminDashboard() {
             </span>
           </div>
           <div className="flex h-28 items-end gap-1.5">
-            {WEEKLY_VIEWS.map((v, i) => {
-              const max = Math.max(...WEEKLY_VIEWS);
-              return (
-                <div key={i} className="group relative flex flex-1 flex-col items-center gap-1">
-                  <div
-                    style={{ height: `${Math.round((v / max) * 100)}%` }}
-                    className="w-full rounded-sm bg-gradient-to-t from-[#E2231A]/60 to-[#E2231A] transition-all group-hover:from-[#E2231A]/80 group-hover:to-[#ff4d4d]"
-                  />
-                </div>
-              );
-            })}
+            {monthlyViews.map((m, i) => (
+              <div key={i} className="group relative flex flex-1 flex-col items-center gap-1">
+                <div
+                  style={{ height: `${Math.round((m.count / maxMonthly) * 100)}%` }}
+                  className="w-full rounded-sm bg-gradient-to-t from-[#E2231A]/60 to-[#E2231A] transition-all group-hover:from-[#E2231A]/80 group-hover:to-[#ff4d4d]"
+                  title={`${m.label}: ${m.count} views`}
+                />
+              </div>
+            ))}
           </div>
           <div className="mt-3 flex items-center justify-between font-mono text-[0.6rem] text-[#374151]">
-            <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span>
-            <span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span>
-            <span>Nov</span><span>Dec</span>
+            {monthlyViews.map((m, i) => (
+              <span key={i}>{m.label}</span>
+            ))}
           </div>
         </div>
 
@@ -137,12 +169,11 @@ export default async function AdminDashboard() {
             <p className="mt-0.5 font-mono text-[0.68rem] text-[#4B5563]">Day-by-day views</p>
           </div>
           <div className="flex flex-col gap-2">
-            {DAYS.map((day, i) => {
-              const max = Math.max(...WEEK_VALS);
-              const pct = Math.round((WEEK_VALS[i] / max) * 100);
+            {weekViews.map((d, i) => {
+              const pct = Math.round((d.count / maxWeekly) * 100);
               return (
-                <div key={day} className="flex items-center gap-3">
-                  <span className="w-7 font-mono text-[0.65rem] text-[#4B5563]">{day}</span>
+                <div key={i} className="flex items-center gap-3">
+                  <span className="w-7 font-mono text-[0.65rem] text-[#4B5563]">{d.label}</span>
                   <div className="flex-1 overflow-hidden rounded-full bg-white/5">
                     <div
                       className="h-1.5 rounded-full bg-gradient-to-r from-[#B81B14] to-[#E2231A]"
@@ -150,7 +181,7 @@ export default async function AdminDashboard() {
                     />
                   </div>
                   <span className="w-10 text-right font-mono text-[0.65rem] text-[#6B7280]">
-                    {(WEEK_VALS[i] / 1000).toFixed(1)}k
+                    {d.count >= 1000 ? `${(d.count / 1000).toFixed(1)}k` : d.count}
                   </span>
                 </div>
               );
@@ -158,7 +189,7 @@ export default async function AdminDashboard() {
           </div>
           <div className="mt-4 border-t border-white/8 pt-4">
             <div className="font-display text-2xl font-black text-white">
-              {(WEEK_VALS.reduce((a, b) => a + b, 0) / 1000).toFixed(0)}k
+              {weekTotal >= 1000 ? `${(weekTotal / 1000).toFixed(1)}k` : weekTotal}
             </div>
             <div className="mt-0.5 font-mono text-[0.65rem] text-[#4B5563]">total this week</div>
           </div>
