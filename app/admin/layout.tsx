@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logoutAction } from "./actions";
 
 const NAV = [
   {
@@ -185,8 +186,23 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         {/* User badge */}
         <div className={`border-t border-white/8 p-3 ${collapsed ? "flex justify-center" : ""}`}>
           {collapsed ? (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E2231A] font-mono text-xs font-bold text-white">
-              ED
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E2231A] font-mono text-xs font-bold text-white">
+                ED
+              </div>
+              <form action={logoutAction}>
+                <button
+                  type="submit"
+                  title="Log out"
+                  aria-label="Log out"
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-[#6B7280] hover:bg-white/8 hover:text-white transition-colors"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                </button>
+              </form>
             </div>
           ) : (
             <div className="flex items-center gap-2.5">
@@ -199,6 +215,19 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                   <Clock />
                 </div>
               </div>
+              <form action={logoutAction} className="ml-auto">
+                <button
+                  type="submit"
+                  title="Log out"
+                  aria-label="Log out"
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-[#6B7280] hover:bg-white/8 hover:text-white transition-colors"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                </button>
+              </form>
             </div>
           )}
         </div>

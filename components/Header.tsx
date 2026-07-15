@@ -51,7 +51,7 @@ export default function Header() {
               alt="Africa Procurement and Supply Chain Mag logo"
               width={120}
               height={32}
-              className="h-9 w-auto"
+              className="h-auto w-auto"
               priority
             />
           </Link>
