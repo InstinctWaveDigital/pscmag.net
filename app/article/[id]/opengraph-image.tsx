@@ -1,21 +1,23 @@
+import { prisma } from "@/lib/db";
 import { ImageResponse } from "next/og";
-import { getArticleById } from "@/lib/data";
 
-export const runtime = "edge";
+// Switch to nodejs runtime so Prisma database queries work properly
+export const runtime = "nodejs";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Next.js 16 requires typing params as a Promise
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 export default async function Image({ params }: Props) {
-  // 1. Await params explicitly for Next.js 16 dynamic route specifications
+  // Await params as required by Next.js 16 dynamic routing
   const resolvedParams = await params;
   
-  // 2. Safely retrieve the article data using the unwrapped id
-  const article = await getArticleById(resolvedParams.id);
+  // Directly query the database to bypass the missing export in lib/data
+  const article = await prisma.article.findUnique({
+    where: { id: resolvedParams.id }
+  });
   
   const title = article?.title ?? "Africa Procurement and Supply Chain Mag";
   const category = article?.category ?? "APSC Mag";
