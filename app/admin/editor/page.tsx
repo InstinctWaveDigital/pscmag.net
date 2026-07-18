@@ -2,6 +2,7 @@ import { query } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import EditorClient from "./EditorClient";
+import { normalizeBody } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +23,7 @@ export default async function EditorPage({
     const res = await query("SELECT * FROM articles WHERE id = $1", [id]);
     if (res.rows.length > 0) {
       const dbArt = res.rows[0];
-      
-      // Writer permission validation
+
       if (session.role === "writer" && dbArt.author !== session.name) {
         redirect("/admin");
       }
@@ -41,13 +41,12 @@ export default async function EditorPage({
         dateline: dbArt.dateline,
         featured: dbArt.featured === 1,
         tags: dbArt.tags ? dbArt.tags.split(",") : [],
-        body: dbArt.body ? JSON.parse(dbArt.body) : [],
+        body: dbArt.body ? normalizeBody(JSON.parse(dbArt.body)) : [],
         status: dbArt.status,
       };
     }
   }
 
-  // Fetch media library items for picker
   const mediaRes = await query("SELECT filename, filepath FROM media ORDER BY created_at DESC");
   const mediaItems = mediaRes.rows.map((row) => ({
     filename: row.filename,

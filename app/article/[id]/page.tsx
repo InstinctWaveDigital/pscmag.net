@@ -24,6 +24,7 @@ export async function generateStaticParams() {
 }
 
 import { buildMetadata } from "@/lib/seo";
+import { BodyBlockRenderer } from "@/components/RichText";
 
 export async function generateMetadata({
   params,
@@ -143,23 +144,8 @@ export default async function ArticlePage({
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_240px]">
             {/* Left Main column */}
             <div className="flex flex-col gap-6">
-              {article.body.map((para: string, idx: number) => {
-                if (idx === 0) {
-                  return (
-                    <p
-                      key={idx}
-                      className="font-serif text-xl leading-relaxed text-ink-900 font-semibold first-letter:float-left first-letter:mr-3 first-letter:text-5xl first-letter:font-black first-letter:text-red-600 first-letter:leading-none"
-                    >
-                      {para}
-                    </p>
-                  );
-                }
-                return (
-                  <p key={idx} className="font-serif text-lg leading-relaxed text-ink-700">
-                    {para}
-                  </p>
-                );
-              })}
+             <BodyBlockRenderer blocks={article.body} variant="article" />
+    
 
               {/* Sourced tags */}
               <div className="mt-8 flex flex-wrap gap-2 border-t border-line-200 pt-6">
