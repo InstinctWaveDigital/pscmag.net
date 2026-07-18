@@ -75,7 +75,7 @@ function LeadParagraph({ text }: { text: string }) {
     <p className="font-serif text-xl font-semibold leading-relaxed text-ink-900">
       <span
         aria-hidden="true"
-        className="float-left mr-2.5 font-display text-[3.4rem] font-black leading-[0.8] text-red-600"
+        className="float-left mr-2.5 font-display text-[3.8rem] font-serif leading-[0.8] text-red-600"
         style={{ marginTop: "0.1em" }}
       >
         {firstChar}
