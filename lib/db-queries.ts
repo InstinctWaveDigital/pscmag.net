@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import { Article } from "./data";
+import { Article, normalizeBody } from "./data";
 
 // ─── Mapping Helpers ─────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ function mapRowToArticle(row: {
     dateline: row.dateline,
     featured: row.featured === 1,
     tags: row.tags ? row.tags.split(",").filter(Boolean) : [],
-    body: row.body ? JSON.parse(row.body) : [],
+    body: row.body ? normalizeBody(JSON.parse(row.body)) : [],
     status: row.status,
     updatedAt: row.updatedAt,
   };
