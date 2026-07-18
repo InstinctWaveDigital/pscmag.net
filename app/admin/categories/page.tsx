@@ -89,18 +89,6 @@ export default async function CategoriesPage() {
           );
         })}
       </div>
-
-      <div className="mt-8 rounded-xl border border-white/8 bg-[#111827] p-5">
-        <h2 className="mb-2 font-mono text-[0.68rem] uppercase tracking-wider text-[#4B5563]">
-          Adding New Categories
-        </h2>
-        <p className="text-sm text-[#6B7280]">
-          Categories are defined statically in{" "}
-          <code className="rounded bg-white/8 px-1.5 py-0.5 font-mono text-[0.7rem] text-[#9296A6]">lib/data.ts</code>
-          {" "}under the <code className="rounded bg-white/8 px-1.5 py-0.5 font-mono text-[0.7rem] text-[#9296A6]">CATEGORIES</code> array.
-          Add a new entry and its slug/art to register it across the site, sitemap, and this CMS workspace.
-        </p>
-      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ const NAV_ITEMS: { href: string; label: string }[] = [
   { href: "/category/procurement-and-governance", label: "Procurement & Governance" },
   { href: "/category/logistics-and-supply-chain", label: "Logistics & Supply Chain" },
   { href: "/category/trade-policy", label: "Trade Policy" },
+  { href: "/category/transportation-and-warehousing", label: "Transportation & Warehousing" },
   { href: "/category/events", label: "Events" },
   { href: "/category/features-and-interviews", label: "Features and Interviews" },
   { href: "/about", label: "About" },
