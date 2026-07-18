@@ -456,18 +456,16 @@ export default function EditorClient({
                     <button
                       type="button"
                       onClick={() => setImageTab("standard")}
-                      className={`px-3 py-1 font-mono text-[0.62rem] uppercase tracking-wider rounded ${
-                        imageTab === "standard" ? "bg-white/10 text-white" : "text-[#4B5563] hover:text-white"
-                      }`}
+                      className={`px-3 py-1 font-mono text-[0.62rem] uppercase tracking-wider rounded ${imageTab === "standard" ? "bg-white/10 text-white" : "text-[#4B5563] hover:text-white"
+                        }`}
                     >
                       Default Illustration
                     </button>
                     <button
                       type="button"
                       onClick={() => setImageTab("custom")}
-                      className={`px-3 py-1 font-mono text-[0.62rem] uppercase tracking-wider rounded ${
-                        imageTab === "custom" ? "bg-white/10 text-white" : "text-[#4B5563] hover:text-white"
-                      }`}
+                      className={`px-3 py-1 font-mono text-[0.62rem] uppercase tracking-wider rounded ${imageTab === "custom" ? "bg-white/10 text-white" : "text-[#4B5563] hover:text-white"
+                        }`}
                     >
                       Custom Picture
                     </button>
@@ -679,77 +677,76 @@ export default function EditorClient({
         </div>
 
         {/* Right: live preview */}
-        <div className={`${preview ? "flex" : "hidden lg:flex"} w-full flex-col overflow-y-auto bg-[#F6F7FB] lg:w-1/2`}>
-          <div className="flex flex-none items-center justify-between border-b border-[#E2E5EE] bg-white px-6 py-3">
-            <span className="font-mono text-[0.68rem] uppercase tracking-wider text-[#9296A6]">
+        <div className={`${preview ? "flex" : "hidden lg:flex"} w-full flex-col overflow-y-auto bg-paper-50 lg:w-1/2`}>
+          <div className="flex flex-none items-center justify-between border-b border-line-200 bg-white px-6 py-3">
+            <span className="font-mono text-[0.68rem] uppercase tracking-wider text-ink-300">
               Live Preview
             </span>
             <div className="flex gap-2">
-              <span className="h-3 w-3 rounded-full bg-[#E2E5EE]" />
-              <span className="h-3 w-3 rounded-full bg-[#E2E5EE]" />
-              <span className="h-3 w-3 rounded-full bg-[#E2E5EE]" />
+              <span className="h-3 w-3 rounded-full bg-line-200" />
+              <span className="h-3 w-3 rounded-full bg-line-200" />
+              <span className="h-3 w-3 rounded-full bg-line-200" />
             </div>
           </div>
           <div className="flex-1 p-6 xl:p-8">
-            <div className="mx-auto max-w-[640px] rounded-xl bg-white p-6 shadow-sm">
-              <div className="font-body text-ink-900" style={{ fontFamily: "Georgia, serif" }}>
-                <div className="mb-4 flex items-center gap-2">
-                  <span
-                    style={{
-                      display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 2,
-                      border: "1px solid #E2231A", background: "#FDEBEA", color: "#E2231A",
-                      fontFamily: "monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
-                      textTransform: "uppercase", padding: "3px 8px",
-                    }}
-                  >
-                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#E2231A", display: "inline-block" }} />
-                    {form.dateline || "ACCRA"} &middot; {form.category}
-                  </span>
-                </div>
+            <div className="mx-auto max-w-[640px] rounded-xl bg-white p-6 shadow-md2">
+              <div className="flex flex-col gap-4">
+                <span className="manifest self-start">
+                  {form.dateline || "ACCRA"} &middot; {form.category}
+                </span>
 
-                <h1 style={{ fontFamily: "Georgia, serif", fontSize: 28, fontWeight: 700, lineHeight: 1.2, color: "#0B0E1A", marginBottom: 12 }}>
+                <h1 className="font-display text-2xl font-bold leading-tight text-ink-900 sm:text-3xl">
                   {form.title || "Your article title will appear here"}
                 </h1>
 
-                <p style={{ fontSize: 16, color: "#5B5F72", lineHeight: 1.6, marginBottom: 16 }}>
+                <p className="text-lg font-medium leading-relaxed text-ink-500">
                   {form.excerpt || "Your article excerpt will appear here."}
                 </p>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 10, borderTop: "1px solid #E2E5EE", borderBottom: "1px solid #E2E5EE", padding: "12px 0", marginBottom: 20 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#0C1F8F", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: 13, fontFamily: "monospace", flexShrink: 0 }}>
-                    {form.author ? initials(form.author) : "AU"}
+                <div className="flex flex-wrap items-center justify-between gap-4 border-y border-line-200 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-700 font-display text-sm font-black text-white">
+                      {form.author ? initials(form.author) : "AU"}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-ink-900">{form.author || "Author Name"}</div>
+                      <div className="font-mono text-xs text-ink-300">{form.role || "Correspondent"}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#0B0E1A" }}>{form.author || "Author Name"}</div>
-                    <div style={{ fontSize: 11, color: "#9296A6", fontFamily: "monospace" }}>{form.role || "Correspondent"}</div>
-                  </div>
-                  <div style={{ marginLeft: "auto", textAlign: "right", fontFamily: "monospace", fontSize: 11, color: "#9296A6" }}>
-                    <div>{formatDate(today)}</div>
+                  <div className="flex flex-col items-end gap-1 text-right font-mono text-xs text-ink-300">
+                    <div>Published {formatDate(today)}</div>
                     <div>{form.readTime}</div>
                   </div>
                 </div>
 
-                <div style={{ position: "relative", aspectRatio: "21/9", background: "#0C1F8F", borderRadius: 8, overflow: "hidden", marginBottom: 24 }}>
-                  <Image src={getArtUrl(form.art)} alt="" fill style={{ objectFit: "cover" }} />
+                <div className="relative aspect-[21/9] w-full overflow-hidden rounded-xl border border-line-200 bg-blue-50">
+                  <Image
+                    src={getArtUrl(form.art)}
+                    alt=""
+                    fill
+                    className="object-cover opacity-90"
+                  />
                 </div>
 
-                {form.body.length === 0 ? (
-                  <p style={{ color: "#9296A6", fontStyle: "italic", fontSize: 14 }}>
-                    Your story content will appear here...
-                  </p>
-                ) : (
-                  <BodyBlockRenderer blocks={form.body} variant="preview" />
-                )}
+                <div className="flex flex-col gap-6">
+                  {form.body.length === 0 ? (
+                    <p className="text-sm italic text-ink-300">
+                      Your story content will appear here...
+                    </p>
+                  ) : (
+                    <BodyBlockRenderer blocks={form.body} variant="article" />
+                  )}
 
-                {tagsList.length > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 20, paddingTop: 16, borderTop: "1px solid #E2E5EE" }}>
-                    {tagsList.map((t) => (
-                      <span key={t} style={{ background: "#EEF0F7", borderRadius: 999, padding: "4px 10px", fontFamily: "monospace", fontSize: 10, color: "#333749" }}>
-                        #{t}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                  {tagsList.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2 border-t border-line-200 pt-6">
+                      {tagsList.map((t) => (
+                        <span key={t} className="tag-pill">
+                          #{t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
