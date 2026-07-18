@@ -52,7 +52,7 @@ export default async function ArticlePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  
+
   let article;
   try {
     article = await getArticleById(id);
@@ -143,12 +143,11 @@ export default async function ArticlePage({
         <div className="container-x max-w-[960px] mt-10">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_240px]">
             {/* Left Main column */}
-            <div className="flex flex-col gap-6">
-             <BodyBlockRenderer blocks={article.body} variant="article" />
-    
+            <div className="flex max-w-[68ch] flex-col gap-6">
+              <BodyBlockRenderer blocks={article.body} variant="article" />
 
               {/* Sourced tags */}
-              <div className="mt-8 flex flex-wrap gap-2 border-t border-line-200 pt-6">
+              <div className="mt-4 flex flex-wrap gap-2 border-t-2 border-ink-900 pt-6">
                 {article.tags.map((tag: string) => (
                   <span key={tag} className="tag-pill">
                     #{tag}
@@ -156,7 +155,7 @@ export default async function ArticlePage({
                 ))}
               </div>
             </div>
-
+            
             {/* Right Sidebar */}
             <div className="flex flex-col gap-6 lg:border-l lg:border-line-200 lg:pl-6">
               <div>
@@ -189,6 +188,8 @@ export default async function ArticlePage({
             </div>
           </div>
         </div>
+
+
       </article>
 
       {/* Related Stories */}

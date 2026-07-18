@@ -1,9 +1,8 @@
 import Image from "next/image";
-import { BodyBlock, getArtUrl } from "@/lib/data";
+import { BodyBlock } from "@/lib/data";
 import type { ReactNode } from "react";
 
 // Parses **bold**, *italic*, __underline__, [label](url) into React nodes.
-// Deliberately not full markdown — just the 4 formats the toolbar produces.
 export function parseInline(text: string): ReactNode[] {
   const tokens: ReactNode[] = [];
   const pattern = /(\*\*.+?\*\*|\*.+?\*|__.+?__|\[.+?\]\(.+?\))/g;
@@ -32,7 +31,7 @@ export function parseInline(text: string): ReactNode[] {
             href={linkMatch[2]}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-700 underline hover:text-blue-900"
+            className="text-blue-700 underline decoration-1 underline-offset-2 hover:text-blue-900"
           >
             {linkMatch[1]}
           </a>
@@ -52,6 +51,40 @@ export function parseInline(text: string): ReactNode[] {
   return tokens;
 }
 
+// True if the raw (unparsed) text begins with a formatting marker rather
+// than a plain character — e.g. "**Kenya..." or "[link](url) rest...".
+// A drop cap on a marker character (an asterisk, a bracket) looks broken,
+// so those cases fall back to normal-size lead styling instead.
+function startsWithMarker(text: string): boolean {
+  return /^(\*\*|\*|__|\[)/.test(text);
+}
+
+function LeadParagraph({ text }: { text: string }) {
+  if (!text || startsWithMarker(text)) {
+    return (
+      <p className="font-serif text-xl font-semibold leading-relaxed text-ink-900">
+        {parseInline(text)}
+      </p>
+    );
+  }
+
+  const firstChar = text[0];
+  const rest = text.slice(1);
+
+  return (
+    <p className="font-serif text-xl font-semibold leading-relaxed text-ink-900">
+      <span
+        aria-hidden="true"
+        className="float-left mr-2.5 font-display text-[3.4rem] font-black leading-[0.8] text-red-600"
+        style={{ marginTop: "0.1em" }}
+      >
+        {firstChar}
+      </span>
+      {parseInline(rest)}
+    </p>
+  );
+}
+
 export function BodyBlockRenderer({
   blocks,
   variant = "article",
@@ -66,8 +99,8 @@ export function BodyBlockRenderer({
       {blocks.map((block, idx) => {
         if (block.type === "image") {
           return (
-            <figure key={idx} className="my-2">
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-blue-50 border border-line-200">
+            <figure key={idx} className="my-3">
+              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-line-200 bg-blue-50 shadow-sm">
                 <Image
                   src={block.url}
                   alt={block.caption || ""}
@@ -77,7 +110,7 @@ export function BodyBlockRenderer({
                 />
               </div>
               {block.caption && (
-                <figcaption className="mt-2 text-center font-mono text-xs text-ink-300">
+                <figcaption className="mt-2.5 border-l-2 border-red-600 pl-3 font-mono text-xs italic text-ink-300">
                   {block.caption}
                 </figcaption>
               )}
@@ -87,8 +120,8 @@ export function BodyBlockRenderer({
 
         if (block.type === "video") {
           return (
-            <figure key={idx} className="my-2">
-              <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+            <figure key={idx} className="my-3">
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-line-200 bg-ink-900 shadow-sm">
                 <iframe
                   src={`https://www.youtube.com/embed/${block.youtubeId}`}
                   title={block.caption || "Embedded video"}
@@ -98,7 +131,7 @@ export function BodyBlockRenderer({
                 />
               </div>
               {block.caption && (
-                <figcaption className="mt-2 text-center font-mono text-xs text-ink-300">
+                <figcaption className="mt-2.5 border-l-2 border-red-600 pl-3 font-mono text-xs italic text-ink-300">
                   {block.caption}
                 </figcaption>
               )}
@@ -109,18 +142,20 @@ export function BodyBlockRenderer({
         const isFirstParagraph = paragraphCount === 0;
         paragraphCount++;
 
+        if (variant === "article" && isFirstParagraph) {
+          return <LeadParagraph key={idx} text={block.text} />;
+        }
+
         return (
           <p
             key={idx}
             className={
-              variant === "article" && isFirstParagraph
-                ? "font-serif text-xl leading-relaxed text-ink-900 font-semibold"
-                : variant === "article"
-                ? "font-serif text-lg leading-relaxed text-ink-700"
+              variant === "article"
+                ? "font-serif text-lg leading-[1.8] text-ink-700"
                 : "leading-relaxed"
             }
           >
-            {parseInline(block.text || "")}
+            {parseInline(block.text)}
           </p>
         );
       })}
