@@ -63,6 +63,8 @@ export async function logoutAction(): Promise<void> {
 
 // ─── ARTICLE ACTIONS ─────────────────────────────────────────────────────────
 
+import { BodyBlock } from "@/lib/data";
+
 export async function saveArticleAction(payload: {
   id?: string;
   category: string;
@@ -74,7 +76,7 @@ export async function saveArticleAction(payload: {
   dateline: string;
   readTime: string;
   tags: string[];
-  body: string[];
+  body: BodyBlock[]; // was string[]
   status: "published" | "draft" | "archived";
   featured: boolean;
 }): Promise<ActionResponse & { id?: string }> {

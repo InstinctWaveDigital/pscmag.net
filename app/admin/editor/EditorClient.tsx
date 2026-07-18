@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { saveArticleAction } from "../actions";
-import { CATEGORIES, initials, formatDate, getArtUrl } from "@/lib/data";
+import { CATEGORIES, initials, formatDate, getArtUrl, extractYouTubeId, BodyBlock } from "@/lib/data";
+import { BodyBlockRenderer } from "@/components/RichText";
 
 const ART_OPTIONS = [
   { value: "procurement", label: "Procurement" },
@@ -29,7 +30,7 @@ interface Article {
   dateline: string;
   featured: boolean;
   tags: string[];
-  body: string[];
+  body: BodyBlock[];
   status: "published" | "draft" | "archived";
 }
 
@@ -40,10 +41,10 @@ interface FormState {
   role: string;
   dateline: string;
   category: string;
-  art: string; // standard SVG value OR custom path like "/uploads/..."
+  art: string;
   readTime: string;
   tags: string;
-  body: string[];
+  body: BodyBlock[];
   status: "published" | "draft" | "archived";
   featured: boolean;
 }
@@ -102,6 +103,66 @@ function Textarea({
   );
 }
 
+// Wraps the current selection in a textarea with the given markers.
+// If nothing is selected, inserts placeholder text between the markers instead.
+function wrapSelection(
+  textarea: HTMLTextAreaElement,
+  before: string,
+  after: string,
+  placeholder: string
+): string {
+  const { selectionStart, selectionEnd, value } = textarea;
+  const selected = value.slice(selectionStart, selectionEnd) || placeholder;
+  return value.slice(0, selectionStart) + before + selected + after + value.slice(selectionEnd);
+}
+
+function ParagraphToolbar({
+  textareaRef,
+  onApply,
+}: {
+  textareaRef: React.RefObject<HTMLTextAreaElement>;
+  onApply: (newText: string) => void;
+}) {
+  function format(before: string, after: string, placeholder: string) {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    onApply(wrapSelection(ta, before, after, placeholder));
+    ta.focus();
+  }
+
+  function formatLink() {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const url = window.prompt("Link URL:");
+    if (!url) return;
+    const { selectionStart, selectionEnd, value } = ta;
+    const label = value.slice(selectionStart, selectionEnd) || "link text";
+    const next = value.slice(0, selectionStart) + `[${label}](${url})` + value.slice(selectionEnd);
+    onApply(next);
+    ta.focus();
+  }
+
+  const btnClass =
+    "flex h-6 w-6 items-center justify-center rounded text-[0.68rem] font-bold text-[#6B7280] hover:bg-white/5 hover:text-white transition";
+
+  return (
+    <div className="mb-1 flex gap-1">
+      <button type="button" onClick={() => format("**", "**", "bold text")} className={btnClass} title="Bold">
+        B
+      </button>
+      <button type="button" onClick={() => format("*", "*", "italic text")} className={`${btnClass} italic`} title="Italic">
+        I
+      </button>
+      <button type="button" onClick={() => format("__", "__", "underlined text")} className={`${btnClass} underline`} title="Underline">
+        U
+      </button>
+      <button type="button" onClick={formatLink} className={btnClass} title="Link">
+        🔗
+      </button>
+    </div>
+  );
+}
+
 export default function EditorClient({
   initialArticle,
   mediaItems,
@@ -115,7 +176,6 @@ export default function EditorClient({
 }) {
   const router = useRouter();
 
-  // Setup form defaults
   const DEFAULT_FORM: FormState = {
     title: initialArticle?.title || "",
     excerpt: initialArticle?.excerpt || "",
@@ -126,7 +186,9 @@ export default function EditorClient({
     art: initialArticle?.art || "procurement",
     readTime: initialArticle?.readTime || "5 min read",
     tags: initialArticle?.tags ? initialArticle.tags.join(", ") : "",
-    body: initialArticle?.body && initialArticle.body.length ? initialArticle.body : [""],
+    body: initialArticle?.body && initialArticle.body.length
+      ? initialArticle.body
+      : [{ type: "paragraph", text: "" }],
     status: initialArticle?.status || "draft",
     featured: initialArticle?.featured || false,
   };
@@ -136,33 +198,48 @@ export default function EditorClient({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
 
-  // Tab state for Cover Image (standard vs custom)
   const isCustomImage = form.art.startsWith("/") || form.art.startsWith("http");
   const [imageTab, setImageTab] = useState<"standard" | "custom">(isCustomImage ? "custom" : "standard");
   const [showMediaPicker, setShowMediaPicker] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Separate picker/upload state for inline body images (vs the cover image above)
+  const [showBodyImagePicker, setShowBodyImagePicker] = useState(false);
+  const [bodyImageUploading, setBodyImageUploading] = useState(false);
+  const [showVideoPrompt, setShowVideoPrompt] = useState(false);
+  const [videoUrlInput, setVideoUrlInput] = useState("");
+
+  const textareaRefs = useRef<Record<number, HTMLTextAreaElement | null>>({});
 
   const set = useCallback(<K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
   }, []);
 
   function addParagraph() {
-    setForm((f) => ({ ...f, body: [...f.body, ""] }));
+    setForm((f) => ({ ...f, body: [...f.body, { type: "paragraph", text: "" }] }));
   }
 
-  function updateParagraph(idx: number, value: string) {
+  function addImageBlock(url: string) {
+    setForm((f) => ({ ...f, body: [...f.body, { type: "image", url, caption: "" }] }));
+  }
+
+  function addVideoBlock(youtubeId: string) {
+    setForm((f) => ({ ...f, body: [...f.body, { type: "video", youtubeId, caption: "" }] }));
+  }
+
+  function updateBlock(idx: number, updates: Partial<BodyBlock>) {
     setForm((f) => {
       const body = [...f.body];
-      body[idx] = value;
+      body[idx] = { ...body[idx], ...updates } as BodyBlock;
       return { ...f, body };
     });
   }
 
-  function removeParagraph(idx: number) {
+  function removeBlock(idx: number) {
     setForm((f) => ({ ...f, body: f.body.filter((_, i) => i !== idx) }));
   }
 
-  function moveParagraph(idx: number, dir: -1 | 1) {
+  function moveBlock(idx: number, dir: -1 | 1) {
     setForm((f) => {
       const body = [...f.body];
       const swap = idx + dir;
@@ -179,10 +256,7 @@ export default function EditorClient({
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const res = await fetch("/api/media/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch("/api/media/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (res.ok && data.success) {
         set("art", data.media.url);
@@ -196,10 +270,46 @@ export default function EditorClient({
     }
   }
 
+  async function handleBodyImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBodyImageUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/media/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        addImageBlock(data.media.url);
+      } else {
+        alert(data.error || "File upload failed.");
+      }
+    } catch {
+      alert("Error uploading file.");
+    } finally {
+      setBodyImageUploading(false);
+    }
+  }
+
+  function handleAddVideo() {
+    const id = extractYouTubeId(videoUrlInput);
+    if (!id) {
+      alert("Couldn't recognize that as a YouTube URL or video ID.");
+      return;
+    }
+    addVideoBlock(id);
+    setVideoUrlInput("");
+    setShowVideoPrompt(false);
+  }
+
   async function handleSave(status: "published" | "draft" | "archived") {
     setSaveState("saving");
     setErrorMessage(null);
     try {
+      const cleanedBody = form.body.filter(
+        (b) => b.type !== "paragraph" || b.text.trim().length > 0
+      );
+
       const res = await saveArticleAction({
         id: initialArticle?.id,
         category: form.category,
@@ -210,11 +320,8 @@ export default function EditorClient({
         role: form.role,
         dateline: form.dateline,
         readTime: form.readTime,
-        tags: form.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-        body: form.body.filter(Boolean),
+        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        body: cleanedBody,
         status,
         featured: form.featured,
       });
@@ -295,7 +402,6 @@ export default function EditorClient({
         </div>
       )}
 
-      {/* Two-panel body */}
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Left: form editor */}
         <div className={`flex flex-col overflow-y-auto border-r border-white/8 ${preview ? "hidden lg:flex" : "flex"} w-full lg:w-1/2`}>
@@ -345,7 +451,6 @@ export default function EditorClient({
                   </select>
                 </Field>
 
-                {/* Illustration/Image Choice */}
                 <div className="col-span-1 sm:col-span-2 rounded-lg border border-white/5 bg-[#0D1117] p-3 flex flex-col gap-3">
                   <div className="flex gap-2 border-b border-white/5 pb-2">
                     <button
@@ -445,65 +550,124 @@ export default function EditorClient({
               </div>
             </div>
 
-            {/* Body paragraphs */}
+            {/* Body blocks */}
             <div className="rounded-xl border border-white/8 bg-[#111827] p-4">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-mono text-[0.68rem] uppercase tracking-wider text-[#4B5563]">
-                  Story Body ({form.body.filter(Boolean).length} paragraph{form.body.filter(Boolean).length !== 1 ? "s" : ""})
+                  Story Body ({form.body.length} block{form.body.length !== 1 ? "s" : ""})
                 </h2>
-                <button
-                  type="button"
-                  onClick={addParagraph}
-                  className="flex items-center gap-1.5 rounded-lg border border-white/8 px-3 py-1.5 font-mono text-[0.68rem] text-[#6B7280] transition hover:border-white/20 hover:text-white"
-                >
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round">
-                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  Add Paragraph
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={addParagraph}
+                    className="flex items-center gap-1.5 rounded-lg border border-white/8 px-3 py-1.5 font-mono text-[0.68rem] text-[#6B7280] transition hover:border-white/20 hover:text-white"
+                  >
+                    + Paragraph
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowBodyImagePicker(true)}
+                    className="flex items-center gap-1.5 rounded-lg border border-white/8 px-3 py-1.5 font-mono text-[0.68rem] text-[#6B7280] transition hover:border-white/20 hover:text-white"
+                  >
+                    + Image
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowVideoPrompt(true)}
+                    className="flex items-center gap-1.5 rounded-lg border border-white/8 px-3 py-1.5 font-mono text-[0.68rem] text-[#6B7280] transition hover:border-white/20 hover:text-white"
+                  >
+                    + Video
+                  </button>
+                </div>
               </div>
 
+              {showVideoPrompt && (
+                <div className="mb-3 flex gap-2 rounded-lg border border-white/8 bg-[#0D1117] p-3">
+                  <input
+                    type="text"
+                    value={videoUrlInput}
+                    onChange={(e) => setVideoUrlInput(e.target.value)}
+                    placeholder="Paste YouTube URL..."
+                    className="flex-1 rounded border border-white/8 bg-[#111827] px-2.5 py-1.5 text-xs text-white placeholder-[#374151] focus:outline-none"
+                  />
+                  <button type="button" onClick={handleAddVideo} className="rounded bg-[#E2231A] px-3 py-1.5 font-mono text-[0.65rem] font-semibold text-white">
+                    Add
+                  </button>
+                  <button type="button" onClick={() => setShowVideoPrompt(false)} className="rounded border border-white/8 px-3 py-1.5 font-mono text-[0.65rem] text-[#6B7280]">
+                    Cancel
+                  </button>
+                </div>
+              )}
+
               <div className="flex flex-col gap-3">
-                {form.body.map((para, idx) => (
+                {form.body.map((block, idx) => (
                   <div key={idx} className="group flex gap-2">
                     <div className="flex flex-col gap-1 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => moveParagraph(idx, -1)}
-                        disabled={idx === 0}
-                        className="flex h-5 w-5 items-center justify-center rounded text-[#374151] hover:text-white disabled:opacity-20 transition"
-                        title="Move up"
-                      >
+                      <button type="button" onClick={() => moveBlock(idx, -1)} disabled={idx === 0} className="flex h-5 w-5 items-center justify-center rounded text-[#374151] hover:text-white disabled:opacity-20 transition" title="Move up">
                         <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><polyline points="18 15 12 9 6 15" /></svg>
                       </button>
-                      <span className="flex h-5 w-5 items-center justify-center font-mono text-[0.58rem] text-[#374151]">
-                        {idx + 1}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => moveParagraph(idx, 1)}
-                        disabled={idx === form.body.length - 1}
-                        className="flex h-5 w-5 items-center justify-center rounded text-[#374151] hover:text-white disabled:opacity-20 transition"
-                        title="Move down"
-                      >
+                      <span className="flex h-5 w-5 items-center justify-center font-mono text-[0.58rem] text-[#374151]">{idx + 1}</span>
+                      <button type="button" onClick={() => moveBlock(idx, 1)} disabled={idx === form.body.length - 1} className="flex h-5 w-5 items-center justify-center rounded text-[#374151] hover:text-white disabled:opacity-20 transition" title="Move down">
                         <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><polyline points="6 9 12 15 18 9" /></svg>
                       </button>
                     </div>
+
                     <div className="min-w-0 flex-1">
-                      <textarea
-                        value={para}
-                        onChange={(e) => updateParagraph(idx, e.target.value)}
-                        rows={3}
-                        placeholder={idx === 0 ? "Lead paragraph (will have drop cap in preview)..." : `Paragraph ${idx + 1}...`}
-                        className="w-full resize-y rounded-lg border border-white/8 bg-[#0D1117] px-3 py-2 text-sm leading-relaxed text-white placeholder-[#374151] focus:border-white/25 focus:outline-none transition"
-                      />
+                      {block.type === "paragraph" ? (
+                        <>
+                          <ParagraphToolbar
+                            textareaRef={{ current: textareaRefs.current[idx] || null }}
+                            onApply={(newText) => updateBlock(idx, { text: newText })}
+                          />
+                          <textarea
+                            ref={(el) => { textareaRefs.current[idx] = el; }}
+                            value={block.text}
+                            onChange={(e) => updateBlock(idx, { text: e.target.value })}
+                            rows={3}
+                            placeholder={idx === 0 ? "Lead paragraph..." : "Paragraph..."}
+                            className="w-full resize-y rounded-lg border border-white/8 bg-[#0D1117] px-3 py-2 text-sm leading-relaxed text-white placeholder-[#374151] focus:border-white/25 focus:outline-none transition"
+                          />
+                        </>
+                      ) : block.type === "image" ? (
+                        <div className="flex flex-col gap-2 rounded-lg border border-white/8 bg-[#0D1117] p-3">
+                          <div className="relative aspect-video w-full overflow-hidden rounded bg-black/40">
+                            <Image src={block.url} alt="" fill className="object-cover" />
+                          </div>
+                          <input
+                            type="text"
+                            value={block.caption || ""}
+                            onChange={(e) => updateBlock(idx, { caption: e.target.value })}
+                            placeholder="Optional caption..."
+                            className="rounded border border-white/8 bg-[#111827] px-2.5 py-1.5 text-xs text-white placeholder-[#374151] focus:outline-none"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2 rounded-lg border border-white/8 bg-[#0D1117] p-3">
+                          <div className="relative aspect-video w-full overflow-hidden rounded bg-black">
+                            <iframe
+                              src={`https://www.youtube.com/embed/${block.youtubeId}`}
+                              title="Video preview"
+                              className="absolute inset-0 h-full w-full"
+                              allowFullScreen
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            value={block.caption || ""}
+                            onChange={(e) => updateBlock(idx, { caption: e.target.value })}
+                            placeholder="Optional caption..."
+                            className="rounded border border-white/8 bg-[#111827] px-2.5 py-1.5 text-xs text-white placeholder-[#374151] focus:outline-none"
+                          />
+                        </div>
+                      )}
                     </div>
+
                     <button
                       type="button"
-                      onClick={() => removeParagraph(idx)}
+                      onClick={() => removeBlock(idx)}
                       disabled={form.body.length <= 1}
                       className="mt-2 flex h-6 w-6 flex-none items-center justify-center rounded text-[#374151] transition hover:text-red-400 disabled:opacity-20"
-                      title="Remove paragraph"
+                      title="Remove block"
                     >
                       <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                     </button>
@@ -516,7 +680,6 @@ export default function EditorClient({
 
         {/* Right: live preview */}
         <div className={`${preview ? "flex" : "hidden lg:flex"} w-full flex-col overflow-y-auto bg-[#F6F7FB] lg:w-1/2`}>
-          {/* Preview header */}
           <div className="flex flex-none items-center justify-between border-b border-[#E2E5EE] bg-white px-6 py-3">
             <span className="font-mono text-[0.68rem] uppercase tracking-wider text-[#9296A6]">
               Live Preview
@@ -529,24 +692,14 @@ export default function EditorClient({
           </div>
           <div className="flex-1 p-6 xl:p-8">
             <div className="mx-auto max-w-[640px] rounded-xl bg-white p-6 shadow-sm">
-              {/* Renders preview matching live page layout */}
               <div className="font-body text-ink-900" style={{ fontFamily: "Georgia, serif" }}>
                 <div className="mb-4 flex items-center gap-2">
                   <span
                     style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      borderRadius: 2,
-                      border: "1px solid #E2231A",
-                      background: "#FDEBEA",
-                      color: "#E2231A",
-                      fontFamily: "monospace",
-                      fontSize: 10,
-                      fontWeight: 700,
-                      letterSpacing: "0.12em",
-                      textTransform: "uppercase",
-                      padding: "3px 8px",
+                      display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 2,
+                      border: "1px solid #E2231A", background: "#FDEBEA", color: "#E2231A",
+                      fontFamily: "monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+                      textTransform: "uppercase", padding: "3px 8px",
                     }}
                   >
                     <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#E2231A", display: "inline-block" }} />
@@ -576,56 +729,18 @@ export default function EditorClient({
                   </div>
                 </div>
 
-                {/* Cover Image Preview */}
                 <div style={{ position: "relative", aspectRatio: "21/9", background: "#0C1F8F", borderRadius: 8, overflow: "hidden", marginBottom: 24 }}>
-                  <Image
-                    src={getArtUrl(form.art)}
-                    alt=""
-                    fill
-                    style={{ objectFit: "cover" }}
-                  />
+                  <Image src={getArtUrl(form.art)} alt="" fill style={{ objectFit: "cover" }} />
                 </div>
 
-                {/* Body Paragraphs */}
-                {form.body.filter(Boolean).length === 0 ? (
+                {form.body.length === 0 ? (
                   <p style={{ color: "#9296A6", fontStyle: "italic", fontSize: 14 }}>
-                    Your story paragraphs will appear here...
+                    Your story content will appear here...
                   </p>
                 ) : (
-                  form.body
-                    .filter(Boolean)
-                    .map((para, i) => (
-                      <p
-                        key={i}
-                        style={{
-                          fontFamily: "Georgia, serif",
-                          fontSize: i === 0 ? 17 : 15,
-                          lineHeight: 1.75,
-                          color: i === 0 ? "#0B0E1A" : "#333749",
-                          marginBottom: 16,
-                          fontWeight: i === 0 ? 600 : 400,
-                        }}
-                      >
-                        {i === 0 && (
-                          <span
-                            style={{
-                              float: "left",
-                              fontSize: 52,
-                              fontWeight: 900,
-                              lineHeight: 0.85,
-                              marginRight: 8,
-                              color: "#E2231A",
-                            }}
-                          >
-                            {para[0]}
-                          </span>
-                        )}
-                        {i === 0 ? para.slice(1) : para}
-                      </p>
-                    ))
+                  <BodyBlockRenderer blocks={form.body} variant="preview" />
                 )}
 
-                {/* Tags */}
                 {tagsList.length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 20, paddingTop: 16, borderTop: "1px solid #E2E5EE" }}>
                     {tagsList.map((t) => (
@@ -641,49 +756,65 @@ export default function EditorClient({
         </div>
       </div>
 
-      {/* Media Picker Modal */}
+      {/* Cover Image Picker Modal */}
       {showMediaPicker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-2xl rounded-2xl border border-white/8 bg-[#0B0E1A] overflow-hidden flex flex-col max-h-[80vh]">
             <div className="flex justify-between items-center border-b border-white/8 p-4">
               <h3 className="font-mono text-sm font-semibold text-white">Select Custom Image</h3>
-              <button
-                type="button"
-                onClick={() => setShowMediaPicker(false)}
-                className="text-[#6B7280] hover:text-white"
-              >
-                Close
-              </button>
+              <button type="button" onClick={() => setShowMediaPicker(false)} className="text-[#6B7280] hover:text-white">Close</button>
             </div>
-            
             <div className="flex-1 overflow-y-auto p-4">
               {mediaItems.length === 0 ? (
-                <div className="py-20 text-center font-mono text-[#4B5563] text-xs">
-                  No images in Media Library yet. Upload one from the Media tab.
-                </div>
+                <div className="py-20 text-center font-mono text-[#4B5563] text-xs">No images in Media Library yet. Upload one from the Media tab.</div>
               ) : (
                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
                   {mediaItems.map((item) => (
-                    <button
-                      key={item.url}
-                      type="button"
-                      onClick={() => {
-                        set("art", item.url);
-                        setShowMediaPicker(false);
-                      }}
-                      className="group relative aspect-square w-full rounded-xl overflow-hidden bg-black/40 border border-white/5 transition hover:border-[#E2231A]/50"
-                    >
-                      <Image
-                        src={item.url}
-                        alt={item.filename}
-                        fill
-                        sizes="10vw"
-                        className="object-cover"
-                      />
+                    <button key={item.url} type="button" onClick={() => { set("art", item.url); setShowMediaPicker(false); }} className="group relative aspect-square w-full rounded-xl overflow-hidden bg-black/40 border border-white/5 transition hover:border-[#E2231A]/50">
+                      <Image src={item.url} alt={item.filename} fill sizes="10vw" className="object-cover" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                        <span className="font-mono text-[0.58rem] text-white bg-black/60 px-2 py-1 rounded">
-                          Select
-                        </span>
+                        <span className="font-mono text-[0.58rem] text-white bg-black/60 px-2 py-1 rounded">Select</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Inline Body Image Picker Modal */}
+      {showBodyImagePicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-white/8 bg-[#0B0E1A] overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="flex justify-between items-center border-b border-white/8 p-4">
+              <h3 className="font-mono text-sm font-semibold text-white">Insert Image Into Story</h3>
+              <button type="button" onClick={() => setShowBodyImagePicker(false)} className="text-[#6B7280] hover:text-white">Close</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="mb-4 flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="body-image-upload"
+                  className="hidden"
+                  onChange={(e) => { handleBodyImageUpload(e); setShowBodyImagePicker(false); }}
+                  disabled={bodyImageUploading}
+                />
+                <label htmlFor="body-image-upload" className="cursor-pointer rounded-lg border border-dashed border-white/10 bg-white/3 px-3 py-2 font-mono text-[0.62rem] text-[#6B7280] hover:text-white">
+                  {bodyImageUploading ? "Uploading..." : "Upload New File"}
+                </label>
+              </div>
+              {mediaItems.length === 0 ? (
+                <div className="py-20 text-center font-mono text-[#4B5563] text-xs">No images in Media Library yet.</div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                  {mediaItems.map((item) => (
+                    <button key={item.url} type="button" onClick={() => { addImageBlock(item.url); setShowBodyImagePicker(false); }} className="group relative aspect-square w-full rounded-xl overflow-hidden bg-black/40 border border-white/5 transition hover:border-[#E2231A]/50">
+                      <Image src={item.url} alt={item.filename} fill sizes="10vw" className="object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                        <span className="font-mono text-[0.58rem] text-white bg-black/60 px-2 py-1 rounded">Insert</span>
                       </div>
                     </button>
                   ))}
