@@ -1,0 +1,44 @@
+// ─────────────────────────────────────────────────────────────────────────
+// ADD to schema.prisma:
+//   1. these two new relation fields on the existing `Article` model
+//   2. the two new models below (PageView, ArticleDailyStat)
+// Then run:
+//   npx prisma migrate dev --name add_analytics_tables
+// (a hand-written matching migration.sql is also included in this delivery
+// under prisma/migrations/20260722120000_add_analytics_tables/ in case you'd
+// rather apply it directly / it needs to match a specific migration history)
+// ─────────────────────────────────────────────────────────────────────────
+
+// --- Add these two lines inside the existing `model Article { ... }` block ---
+//   pageViews  PageView[]
+//   dailyStats ArticleDailyStat[]
+
+model PageView {
+  id             String   @id @default(cuid())
+  articleId      String   @map("article_id")
+  article        Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  viewedAt       DateTime @default(now()) @map("viewed_at")
+  // 'direct' | 'search' | 'social' | 'referral' | 'other' — kept as text
+  // rather than a Prisma enum so new source buckets don't require a migration.
+  referrerSource String   @map("referrer_source")
+  // Rough, non-PII dedup key (random id issued client-side, no cookies/IP).
+  sessionId      String   @map("session_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([articleId, viewedAt])
+  @@index([viewedAt])
+  @@map("page_views")
+}
+
+model ArticleDailyStat {
+  id             String   @id @default(cuid())
+  articleId      String   @map("article_id")
+  article        Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  date           DateTime @db.Date
+  viewCount      Int      @default(0) @map("view_count")
+  uniqueSessions Int      @default(0) @map("unique_sessions")
+
+  @@unique([articleId, date])
+  @@index([date])
+  @@map("article_daily_stats")
+}

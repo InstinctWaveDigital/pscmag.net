@@ -33,6 +33,9 @@ model Article {
   status    String
   updatedAt String @map("updated_at")
 
+  pageViews  PageView[]
+  dailyStats ArticleDailyStat[]
+
   @@map("articles")
 }
 
@@ -66,4 +69,31 @@ model ContactMessage {
   read      Boolean  @default(false)
 
   @@map("contact_messages")
+}
+
+model PageView {
+  id             Int      @id @default(autoincrement())
+  articleId      String?  @map("article_id")
+  article        Article? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  viewedAt       DateTime @default(now()) @map("viewed_at") @db.Timestamptz(6)
+  referrerSource String   @default("other") @map("referrer_source")
+  sessionId      String?  @map("session_id")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([articleId, viewedAt])
+  @@index([viewedAt])
+  @@map("page_views")
+}
+
+model ArticleDailyStat {
+  id             String   @id @default(cuid())
+  articleId      String   @map("article_id")
+  article        Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  date           DateTime @db.Date
+  viewCount      Int      @default(0) @map("view_count")
+  uniqueSessions Int      @default(0) @map("unique_sessions")
+
+  @@unique([articleId, date])
+  @@index([date])
+  @@map("article_daily_stats")
 }

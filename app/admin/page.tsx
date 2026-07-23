@@ -3,6 +3,9 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatDate } from "@/lib/data";
+import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
+import TopArticlesTable from "@/components/admin/TopArticlesTable";
+import DeltaBadge from "@/components/admin/DeltaBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -17,17 +20,22 @@ function StatCard({
   value,
   sub,
   accent = false,
+  changePct,
 }: {
   label: string;
   value: string | number;
   sub?: string;
   accent?: boolean;
+  changePct?: number | null;
 }) {
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-white/8 bg-[#111827] p-5 transition hover:border-white/15">
-      <span className="font-mono text-[0.68rem] uppercase tracking-widest text-[#4B5563]">
-        {label}
-      </span>
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[0.68rem] uppercase tracking-widest text-[#4B5563]">
+          {label}
+        </span>
+        {changePct !== undefined && <DeltaBadge pct={changePct} />}
+      </div>
       <span
         className={`font-display text-4xl font-black leading-none ${
           accent ? "text-[#E2231A]" : "text-white"
@@ -59,22 +67,50 @@ export default async function AdminDashboard() {
     total: parseInt(totalRes.rows[0].count, 10),
   };
 
-  // Real monthly views — last 12 months, zero-filled for months with no data
-  const monthlyRes = await query(`
-    SELECT to_char(month, 'Mon') AS label, COALESCE(v.count, 0)::int AS count
-    FROM generate_series(
-      date_trunc('month', now()) - interval '11 months',
-      date_trunc('month', now()),
-      interval '1 month'
-    ) AS month
-    LEFT JOIN (
-      SELECT date_trunc('month', viewed_at) AS month, COUNT(*) AS count
-      FROM page_views
-      GROUP BY 1
-    ) v USING (month)
-    ORDER BY month
+  // --- Period-comparison deltas for the stat cards --------------------------
+  // `articles.updated_at` is the only timestamp we have (no created_at /
+  // status-history table), so "vs previous period" here means: how many
+  // articles in this status were touched (created or edited) in the last 7
+  // days vs the 7 days before that. It's a proxy, not a true point-in-time
+  // snapshot diff — flagged here since that's a real limitation, not an
+  // oversight. A `status_history` table would give an exact answer if this
+  // needs to be precise later.
+  const deltaRes = await query(`
+    WITH bounds AS (
+      SELECT
+        now() - interval '7 days' AS cur_start,
+        now() AS cur_end,
+        now() - interval '14 days' AS prev_start,
+        now() - interval '7 days' AS prev_end
+    )
+    SELECT
+      status,
+      COUNT(*) FILTER (WHERE updated_at::timestamptz >= bounds.cur_start AND updated_at::timestamptz < bounds.cur_end) AS current_count,
+      COUNT(*) FILTER (WHERE updated_at::timestamptz >= bounds.prev_start AND updated_at::timestamptz < bounds.prev_end) AS previous_count
+    FROM articles, bounds
+    GROUP BY status
   `);
-  const monthlyViews = monthlyRes.rows as { label: string; count: number }[];
+
+  function pctChange(current: number, previous: number): number | null {
+    if (previous === 0) return current > 0 ? 100 : null;
+    return Math.round(((current - previous) / previous) * 1000) / 10;
+  }
+
+  const deltaByStatus = new Map(
+    deltaRes.rows.map((r: any) => [
+      r.status,
+      pctChange(parseInt(r.current_count, 10), parseInt(r.previous_count, 10)),
+    ])
+  );
+
+  const totalDeltaRow = deltaRes.rows.reduce(
+    (acc: { cur: number; prev: number }, r: any) => ({
+      cur: acc.cur + parseInt(r.current_count, 10),
+      prev: acc.prev + parseInt(r.previous_count, 10),
+    }),
+    { cur: 0, prev: 0 }
+  );
+  const totalDelta = pctChange(totalDeltaRow.cur, totalDeltaRow.prev);
 
   // Real daily views for the current week (Mon–Sun), zero-filled
   const weekRes = await query(`
@@ -94,6 +130,15 @@ export default async function AdminDashboard() {
   const weekViews = weekRes.rows as { label: string; count: number }[];
   const weekTotal = weekViews.reduce((sum, d) => sum + d.count, 0);
 
+  const prevWeekRes = await query(`
+    SELECT COUNT(*)::int AS count
+    FROM page_views
+    WHERE viewed_at >= date_trunc('week', now()) - interval '7 days'
+      AND viewed_at < date_trunc('week', now())
+  `);
+  const prevWeekTotal = prevWeekRes.rows[0]?.count ?? 0;
+  const weekDelta = pctChange(weekTotal, prevWeekTotal);
+
   // Recent articles (Writers see only their own)
   let recentRes;
   if (session.role === "writer") {
@@ -108,7 +153,6 @@ export default async function AdminDashboard() {
   }
   const recent = recentRes.rows;
 
-  const maxMonthly = Math.max(...monthlyViews.map((m) => m.count), 1);
   const maxWeekly = Math.max(...weekViews.map((d) => d.count), 1);
 
   return (
@@ -123,44 +167,37 @@ export default async function AdminDashboard() {
 
       {/* Stat cards */}
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Published" value={stats.published} sub="Live on site" accent />
-        <StatCard label="Drafts" value={stats.draft} sub="In progress" />
-        <StatCard label="Archived" value={stats.archived} sub="Hidden from readers" />
-        <StatCard label="Total Stories" value={stats.total} sub="Across all categories" />
+        <StatCard
+          label="Published"
+          value={stats.published}
+          sub="Live on site"
+          accent
+          changePct={deltaByStatus.get("published") ?? null}
+        />
+        <StatCard
+          label="Drafts"
+          value={stats.draft}
+          sub="In progress"
+          changePct={deltaByStatus.get("draft") ?? null}
+        />
+        <StatCard
+          label="Archived"
+          value={stats.archived}
+          sub="Hidden from readers"
+          changePct={deltaByStatus.get("archived") ?? null}
+        />
+        <StatCard
+          label="Total Stories"
+          value={stats.total}
+          sub="Across all categories"
+          changePct={totalDelta}
+        />
       </div>
 
       {/* Charts row */}
       <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Reader engagement chart */}
-        <div className="col-span-2 rounded-xl border border-white/8 bg-[#111827] p-5">
-          <div className="mb-4 flex items-start justify-between">
-            <div>
-              <h2 className="text-sm font-semibold text-white">Reader Engagement</h2>
-              <p className="mt-0.5 font-mono text-[0.68rem] text-[#4B5563]">
-                Monthly page views
-              </p>
-            </div>
-            <span className="rounded-full border border-white/8 px-2.5 py-1 font-mono text-[0.65rem] text-[#6B7280]">
-              Last 12 months
-            </span>
-          </div>
-          <div className="flex h-28 items-end gap-1.5">
-            {monthlyViews.map((m, i) => (
-              <div key={i} className="group relative flex flex-1 flex-col items-center gap-1">
-                <div
-                  style={{ height: `${Math.round((m.count / maxMonthly) * 100)}%` }}
-                  className="w-full rounded-sm bg-gradient-to-t from-[#E2231A]/60 to-[#E2231A] transition-all group-hover:from-[#E2231A]/80 group-hover:to-[#ff4d4d]"
-                  title={`${m.label}: ${m.count} views`}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 flex items-center justify-between font-mono text-[0.6rem] text-[#374151]">
-            {monthlyViews.map((m, i) => (
-              <span key={i}>{m.label}</span>
-            ))}
-          </div>
-        </div>
+        {/* Reader engagement — views by category, Recharts, range-selectable */}
+        <AnalyticsPanel />
 
         {/* Weekly breakdown */}
         <div className="rounded-xl border border-white/8 bg-[#111827] p-5">
@@ -187,13 +224,21 @@ export default async function AdminDashboard() {
               );
             })}
           </div>
-          <div className="mt-4 border-t border-white/8 pt-4">
-            <div className="font-display text-2xl font-black text-white">
-              {weekTotal >= 1000 ? `${(weekTotal / 1000).toFixed(1)}k` : weekTotal}
+          <div className="mt-4 flex items-end justify-between border-t border-white/8 pt-4">
+            <div>
+              <div className="font-display text-2xl font-black text-white">
+                {weekTotal >= 1000 ? `${(weekTotal / 1000).toFixed(1)}k` : weekTotal}
+              </div>
+              <div className="mt-0.5 font-mono text-[0.65rem] text-[#4B5563]">total this week</div>
             </div>
-            <div className="mt-0.5 font-mono text-[0.65rem] text-[#4B5563]">total this week</div>
+            <DeltaBadge pct={weekDelta} label="vs previous week" />
           </div>
         </div>
+      </div>
+
+      {/* Top articles */}
+      <div className="mb-8">
+        <TopArticlesTable range="7d" />
       </div>
 
       {/* Recent articles */}
