@@ -10,6 +10,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
+import ExportMenu from "./ExportMenu";
 
 type Range = "7d" | "30d" | "12mo";
 
@@ -94,21 +95,24 @@ export default function AnalyticsPanel() {
             )}
           </p>
         </div>
-        <div className="flex gap-1 rounded-lg border border-white/8 p-1">
-          {(["7d", "30d", "12mo"] as Range[]).map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRange(r)}
-              className={`rounded-md px-2.5 py-1 font-mono text-[0.65rem] transition ${
-                range === r
-                  ? "bg-[#E2231A] text-white"
-                  : "text-[#6B7280] hover:text-white"
-              }`}
-            >
-              {RANGE_LABEL[r]}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 rounded-lg border border-white/8 p-1">
+            {(["7d", "30d", "12mo"] as Range[]).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRange(r)}
+                className={`rounded-md px-2.5 py-1 font-mono text-[0.65rem] transition ${
+                  range === r
+                    ? "bg-[#E2231A] text-white"
+                    : "text-[#6B7280] hover:text-white"
+                }`}
+              >
+                {RANGE_LABEL[r]}
+              </button>
+            ))}
+          </div>
+          <ExportMenu range={range} />
         </div>
       </div>
 
@@ -155,7 +159,10 @@ export default function AnalyticsPanel() {
               }}
               labelStyle={{ color: "#fff", fontWeight: 600 }}
               itemStyle={{ color: "#E2231A" }}
-              formatter={(value) => [typeof value === "number" ? value.toLocaleString() : value, "Views"]}
+              formatter={(value) => [
+                typeof value === "number" ? value.toLocaleString() : String(value),
+                "Views",
+              ]}
             />
             <Bar dataKey="views" fill="#E2231A" radius={[4, 4, 0, 0]} maxBarSize={48} />
           </BarChart>

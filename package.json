@@ -12,6 +12,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",
     "@prisma/client": "^7.9.0",
+    "@react-pdf/renderer": "^4.5.1",
     "@supabase/supabase-js": "^2.110.2",
     "@tailwindcss/postcss": "^4.3.2",
     "dotenv": "^17.4.2",
