@@ -37,9 +37,10 @@ function buildCsv(params: {
   lines.push(csvRow(["OVERVIEW"]));
   lines.push(csvRow(["Metric", "Value"]));
   lines.push(csvRow(["Total Views", overview.totalViews]));
-  lines.push(csvRow(["Unique Sessions", overview.uniqueSessions]));
+  lines.push(csvRow(["Unique Sessions (tracked only)", overview.uniqueSessions]));
   lines.push(csvRow(["Previous Period Views", overview.previousPeriodViews]));
   lines.push(csvRow(["Change vs Previous Period (%)", overview.changePct ?? "N/A"]));
+  lines.push(csvRow(["Note", "Views recorded before session tracking was added have no session ID and are not counted toward Unique Sessions."]));
   lines.push("");
 
   lines.push(csvRow(["VIEWS OVER TIME"]));

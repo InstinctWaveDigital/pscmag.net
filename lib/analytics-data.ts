@@ -1,6 +1,5 @@
 import { query } from "@/lib/db";
 import { AnalyticsRange, rangeToDates } from "@/lib/analytics-range";
-import { CATEGORY_VALUES } from "@/lib/categories";
 
 export interface SeriesPoint {
   label: string;
@@ -76,9 +75,23 @@ export interface CategoryRow {
 export interface ByCategoryData {
   range: AnalyticsRange;
   categories: CategoryRow[];
-  unrecognizedCategories: CategoryRow[];
 }
 
+/**
+ * Returns every category actually present in `articles.category` for the
+ * selected range, ranked by views — no hardcoded allowlist. An earlier
+ * version of this function cross-referenced a fixed six-category list that
+ * didn't match this app's real taxonomy (it was left over from an unrelated
+ * demo project), which silently dropped most of the real data from the
+ * chart. Reading straight from the DB means the chart can never again show
+ * a number that doesn't add up to the real total.
+ *
+ * If you maintain a canonical category list elsewhere (e.g. an export from
+ * `@/lib/data`) and want categories that exist in the DB but *aren't* in
+ * that list flagged for cleanup, say so and I'll add that as a separate,
+ * non-destructive validation pass rather than folding it back into this
+ * query.
+ */
 export async function getByCategoryData(range: AnalyticsRange): Promise<ByCategoryData> {
   const { start, end } = rangeToDates(range);
 
@@ -94,18 +107,10 @@ export async function getByCategoryData(range: AnalyticsRange): Promise<ByCatego
     [start, end]
   );
 
-  const byName = new Map<string, number>(res.rows.map((r: any) => [r.category, r.views]));
-
-  const known = CATEGORY_VALUES.map((name) => ({
-    category: name,
-    views: byName.get(name) ?? 0,
-  }));
-
-  const unrecognized = res.rows
-    .filter((r: any) => !CATEGORY_VALUES.includes(r.category))
-    .map((r: any) => ({ category: r.category, views: r.views }));
-
-  return { range, categories: known, unrecognizedCategories: unrecognized };
+  return {
+    range,
+    categories: res.rows.map((r: any) => ({ category: r.category, views: r.views })),
+  };
 }
 
 export interface TopArticleRow {

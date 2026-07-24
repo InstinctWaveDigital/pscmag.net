@@ -226,7 +226,7 @@ export default function AnalyticsReportPdf({
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>Unique Sessions</Text>
               <Text style={styles.statValue}>{overview.uniqueSessions.toLocaleString()}</Text>
-              <Text style={styles.statChange}> </Text>
+              <Text style={styles.statChange}>Tracked sessions only*</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>Previous Period</Text>
@@ -287,7 +287,11 @@ export default function AnalyticsReportPdf({
         </View>
 
         <View style={styles.footer} fixed>
-          <Text>Africa Procurement and Supply Chain Mag &middot; Confidential — Internal Use Only</Text>
+          <Text>
+            Africa Procurement and Supply Chain Mag &middot; Confidential — Internal Use Only
+            &middot; *Views recorded before session tracking was added have no session ID and
+            aren&apos;t counted toward Unique Sessions.
+          </Text>
           <Text
             render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
           />
