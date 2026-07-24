@@ -155,7 +155,7 @@ export default function AnalyticsPanel() {
               }}
               labelStyle={{ color: "#fff", fontWeight: 600 }}
               itemStyle={{ color: "#E2231A" }}
-              formatter={(value: number) => [value.toLocaleString(), "Views"]}
+              formatter={(value) => [typeof value === "number" ? value.toLocaleString() : value, "Views"]}
             />
             <Bar dataKey="views" fill="#E2231A" radius={[4, 4, 0, 0]} maxBarSize={48} />
           </BarChart>
